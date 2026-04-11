@@ -1,0 +1,132 @@
+---
+title: "Capability Ontology"
+description: "The shared vocabulary through which all services declare what they do and all agents search for what they need"
+---
+
+# Capability Ontology v0.1
+
+The capability ontology is the single most strategically important artifact AgentLedger will produce. The entity that controls this vocabulary controls discovery — even without controlling any individual registry.
+
+## Design Rules
+
+1. Root categories are **DOMAINS** — what world does this touch?
+2. L2 categories are **FUNCTIONS** — what class of action?
+3. L3 tags are **CAPABILITIES** — what specific thing can you do?
+4. Every capability must be a **VERB PHRASE** — agents operate in actions, not categories
+5. No capability appears in two branches — forces precision
+
+## The Taxonomy Tree
+
+```
+ROOT
+├── TRAVEL
+│   ├── travel.air
+│   │   ├── travel.air.search
+│   │   ├── travel.air.book
+│   │   ├── travel.air.cancel
+│   │   └── travel.air.track
+│   ├── travel.ground
+│   │   ├── travel.ground.rail
+│   │   ├── travel.ground.car_rental
+│   │   └── travel.ground.rideshare
+│   ├── travel.lodging
+│   │   ├── travel.lodging.search
+│   │   ├── travel.lodging.book
+│   │   └── travel.lodging.cancel
+│   └── travel.documents
+│       ├── travel.documents.visa
+│       └── travel.documents.passport
+│
+├── FINANCE
+│   ├── finance.payments
+│   │   ├── finance.payments.send
+│   │   ├── finance.payments.request
+│   │   └── finance.payments.verify
+│   ├── finance.accounts
+│   │   ├── finance.accounts.balance
+│   │   ├── finance.accounts.history
+│   │   └── finance.accounts.open
+│   ├── finance.investment
+│   │   ├── finance.investment.quote
+│   │   ├── finance.investment.trade
+│   │   └── finance.investment.analyze
+│   └── finance.insurance
+│       ├── finance.insurance.quote
+│       └── finance.insurance.claim
+│
+├── HEALTH
+│   ├── health.appointments
+│   │   ├── health.appointments.book
+│   │   ├── health.appointments.cancel
+│   │   └── health.appointments.remind
+│   ├── health.records
+│   │   ├── health.records.retrieve
+│   │   ├── health.records.share
+│   │   └── health.records.summarize
+│   ├── health.pharmacy
+│   │   ├── health.pharmacy.refill
+│   │   ├── health.pharmacy.check
+│   │   └── health.pharmacy.locate
+│   └── health.monitoring
+│       ├── health.monitoring.vitals
+│       └── health.monitoring.alert
+│
+├── COMMERCE
+│   ├── commerce.shopping
+│   │   ├── commerce.shopping.search
+│   │   ├── commerce.shopping.compare
+│   │   ├── commerce.shopping.purchase
+│   │   └── commerce.shopping.return
+│   ├── commerce.subscriptions
+│   │   ├── commerce.subscriptions.create
+│   │   ├── commerce.subscriptions.cancel
+│   │   └── commerce.subscriptions.modify
+│   ├── commerce.delivery
+│   │   ├── commerce.delivery.track
+│   │   ├── commerce.delivery.schedule
+│   │   └── commerce.delivery.redirect
+│   └── commerce.reviews
+│       ├── commerce.reviews.retrieve
+│       └── commerce.reviews.analyze
+│
+└── PRODUCTIVITY
+    ├── productivity.calendar
+    │   ├── productivity.calendar.read
+    │   ├── productivity.calendar.create
+    │   ├── productivity.calendar.schedule
+    │   └── productivity.calendar.cancel
+    ├── productivity.communication
+    │   ├── productivity.communication.email_send
+    │   ├── productivity.communication.email_read
+    │   ├── productivity.communication.sms
+    │   └── productivity.communication.notify
+    ├── productivity.documents
+    │   ├── productivity.documents.create
+    │   ├── productivity.documents.retrieve
+    │   ├── productivity.documents.sign
+    │   └── productivity.documents.summarize
+    └── productivity.automation
+        ├── productivity.automation.trigger
+        ├── productivity.automation.monitor
+        └── productivity.automation.report
+```
+
+## Why These Five Roots?
+
+These domains map to where agents will first replace human action — and where the liability stakes are highest. They are also the five domains **almost entirely uncovered by MCP's current adoption**, which skews heavily toward developer tooling.
+
+| MCP Coverage | AgentLedger Coverage |
+|-------------|---------------------|
+| Database connectors | Travel |
+| GitHub / CI-CD | Finance |
+| Communication platforms | Health |
+| Cloud infrastructure | Commerce + Productivity |
+
+## Version Roadmap
+
+| Version | Scope |
+|---------|-------|
+| **v0.1** ← current | 5 roots, 20 L2 branches, 65 L3 capabilities |
+| v0.2 | Add LEGAL, GOVERNMENT, REAL_ESTATE roots |
+| v0.3 | Add L4 sub-capability parameters + input/output schemas |
+| v1.0 | Full semantic embeddings trained on ontology + real service descriptions |
