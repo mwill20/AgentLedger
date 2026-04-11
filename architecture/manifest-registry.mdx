@@ -1,0 +1,132 @@
+---
+title: "Manifest Registry"
+description: "Universal capability ontology and semantic discovery API for agent-native services"
+---
+
+# Manifest Registry
+
+The Manifest Registry solves the discovery problem by providing a universal, machine-queryable index of agent-native services. It is the DNS + App Store + NPM of the agent web — built agent-first.
+
+## The Agent Manifest
+
+Every registered service publishes a structured manifest at a standard path:
+
+```
+/.well-known/agent-manifest.json
+```
+
+### Five Manifest Blocks
+
+**1. Identity Block** — Who are you?
+```json
+{
+  "manifest_version": "1.0",
+  "service_id": "uuid-v4-globally-unique",
+  "name": "FlightBookerPro",
+  "legal_entity": "FlightBookerPro Inc.",
+  "domain": "flightbookerpro.com",
+  "domain_verified": true,
+  "public_key": "sha256:abc123...",
+  "manifest_signature": "...",
+  "last_updated": "2026-04-10T00:00:00Z"
+}
+```
+
+**2. Capability Block** — What can you do?
+```json
+{
+  "capabilities": [
+    {
+      "id": "book_flight",
+      "description": "Books a one-way or round-trip flight given origin, destination, dates, and budget.",
+      "ontology_tag": "travel.air.book",
+      "input_schema": "https://...openapi#BookFlight",
+      "output_schema": "https://...openapi#BookingConfirmation",
+      "success_rate_30d": 0.97,
+      "avg_latency_ms": 1200,
+      "tested_by_registry": true
+    }
+  ]
+}
+```
+
+**3. Economics Block** — What does it cost?
+```json
+{
+  "pricing": {
+    "model": "per_transaction",
+    "tiers": [
+      { "name": "standard", "cost_usd": 0.85, "per": "transaction" },
+      { "name": "volume", "cost_usd": 0.40, "per": "transaction", "min_volume": 1000 }
+    ],
+    "billing_method": "x402"
+  }
+}
+```
+
+**4. Context Requirements Block** — What data do you need?
+```json
+{
+  "context": {
+    "required": [
+      { "field": "user_budget_usd", "type": "number", "sensitivity": "financial" },
+      { "field": "travel_dates", "type": "daterange", "sensitivity": "low" }
+    ],
+    "optional": [
+      { "field": "passport_nationality", "type": "string", "sensitivity": "pii_high" }
+    ],
+    "data_retention_days": 0,
+    "data_sharing": "none"
+  }
+}
+```
+
+**5. Operations Block** — Can I rely on you?
+```json
+{
+  "operations": {
+    "uptime_sla_percent": 99.9,
+    "rate_limits": { "rpm": 100, "rpd": 10000 },
+    "compliance_certifications": ["SOC2", "GDPR", "CCPA"],
+    "sandbox_url": "https://sandbox.flightbookerpro.com"
+  }
+}
+```
+
+## Trust Tiers
+
+| Tier | How Achieved | Trust Level |
+|------|-------------|-------------|
+| ⭐ Crawled | Registry finds manifest at `/.well-known/` | Baseline, unverified |
+| ⭐⭐ Domain Verified | DNS TXT record confirms domain ownership | Identity confirmed |
+| ⭐⭐⭐ Capability Probed | Live synthetic transactions pass | Identity + function confirmed |
+| ⭐⭐⭐⭐ Ledger Attested | Full Trust Ledger attestation | Maximum trust |
+
+## Query Interface
+
+The registry exposes three query modes:
+
+**Structured API**
+```http
+GET /services?ontology=travel.air.book&trust_min=80&geo=US&budget_max=1.00
+```
+
+**Natural Language**
+```http
+POST /search
+{ "query": "Book a round-trip flight from Seattle to NYC under $600" }
+```
+
+**Ambient Discovery**
+Agent extracts entity name from user context → registry lookup → trust evaluation before interaction.
+
+## Ranking Algorithm
+
+```
+SCORE = (Capability Match  × 0.35)
+      + (Trust Score       × 0.25)
+      + (Latency Score     × 0.15)
+      + (Cost Efficiency   × 0.10)
+      + (Reliability Score × 0.10)
+      + (Context Fit       × 0.05)
+```
