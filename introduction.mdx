@@ -1,0 +1,47 @@
+---
+title: "AgentLedger"
+description: "Trust & Discovery Infrastructure for the Autonomous Agent Web"
+---
+
+# AgentLedger
+
+**Working Paper v0.1 · April 2026 · Michael Williams**
+
+The autonomous agent web is fragmenting faster than any standards body can respond. Over 104,000 AI agents are now registered across 15+ incompatible registries with zero cross-registry trust.
+
+The protocols that define agent communication — MCP, A2A, agents.txt — explicitly scope out trust. When an agent executes a financial transaction, books travel, or shares medical records with a third-party service, no infrastructure exists to answer the foundational question:
+
+> **Can this service be trusted?**
+
+## The Scale of the Problem
+
+| Metric | Reality |
+|--------|---------|
+| Agents registered | 104,000+ across 15+ registries |
+| IETF discovery drafts | 10+ competing, no converged standard |
+| Known MCP threat vectors | ~40 with no unified defense |
+| Cross-registry trust | Zero |
+
+## What AgentLedger Does
+
+AgentLedger is a three-component infrastructure layer that sits **above** existing communication protocols and **below** orchestration frameworks — filling the trust gap that no existing protocol addresses.
+
+<CardGroup cols={3}>
+  <Card title="Manifest Registry" icon="database" href="/architecture/manifest-registry">
+    Universal capability ontology and semantic discovery API. DNS + App Store + NPM, built agent-first.
+  </Card>
+  <Card title="Trust Ledger" icon="shield-check" href="/architecture/trust-ledger">
+    Blockchain-anchored attestation records. Immutable, cross-registry, cryptographically verifiable.
+  </Card>
+  <Card title="Audit Chain" icon="link" href="/architecture/audit-chain">
+    Tamper-proof action logs enabling liability attribution for autonomous agent transactions.
+  </Card>
+</CardGroup>
+
+## Why Now
+
+The standards landscape is at a critical inflection point. Domain-specific registries are forming independently — Google UCP for commerce, IAB AAMP for advertising, Huawei A2A-T for telecom. Each uses incompatible trust models. The window to establish a neutral, open interoperability layer is measured in months, not years.
+
+<Card title="Read the Full Problem Statement" icon="arrow-right" href="/problem">
+  Understand the discovery gap, trust vacuum, and fragmentation crisis in detail
+</Card>
