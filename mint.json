@@ -1,0 +1,46 @@
+{
+  "name": "AgentLedger",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/logo/favicon.png",
+  "colors": {
+    "primary": "#1B3A6B",
+    "light": "#4A7CC7",
+    "dark": "#0D1F3C"
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/mwill20/AgentLedger"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Read the Whitepaper",
+    "url": "https://github.com/mwill20/AgentLedger"
+  },
+  "navigation": [
+    {
+      "group": "Overview",
+      "pages": ["introduction", "problem"]
+    },
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/overview",
+        "architecture/manifest-registry",
+        "architecture/trust-ledger",
+        "architecture/audit-chain"
+      ]
+    },
+    {
+      "group": "Reference",
+      "pages": ["ontology", "threat-model", "roadmap"]
+    }
+  ],
+  "footerSocials": {
+    "linkedin": "https://linkedin.com/in/mwill-AImission",
+    "github": "https://github.com/mwill20"
+  }
+}
