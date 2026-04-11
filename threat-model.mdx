@@ -1,0 +1,84 @@
+---
+title: "Threat Model"
+description: "Security architecture and primary attack vectors for the AgentLedger trust layer"
+---
+
+# Threat Model
+
+## Design Principle
+
+Every architectural decision assumes the system will be attacked, that attackers will be well-resourced, and that the damage from a compromised trust registry is qualitatively different from a compromised application.
+
+<Warning>
+A compromised trust layer is not a data breach. It is a **supply chain attack on every agent transaction in the ecosystem**. The blast radius scales with adoption. This is why security architecture must precede commercial architecture.
+</Warning>
+
+## Six Primary Threats
+
+### 1. Manifest Spoofing 🔴 Critical
+
+**Attack:** An adversary who controls a high-ranking registry listing publishes a fraudulent manifest impersonating a legitimate brand via typosquatting — `f1ightbookerpro.com` instead of `flightbookerpro.com`. An agent routing a user's financial transaction to the fraudulent endpoint has no way to detect the deception before harm occurs.
+
+**Mitigation:** Cryptographic manifest signing tied to domain-verified public keys, plus registry-side domain similarity scoring to flag typosquatting at submission time.
+
+---
+
+### 2. Capability Inflation 🟠 High
+
+**Attack:** A service stuffs the capability ontology with every plausible tag — claiming `health.records.retrieve`, `finance.payments.send`, and `travel.air.book` simultaneously despite only implementing one — to appear in every high-value search result. An agent matching on inflated capabilities may attempt a transaction the service can't fulfill, causing cascading failures in multi-agent pipelines.
+
+**Mitigation:** Registry-run synthetic capability probing at onboarding and on random intervals. The service must pass live API tests for every ontology tag it claims, or the tag is stripped.
+
+---
+
+### 3. Sybil / Trust Gaming 🔴 Critical
+
+**Attack:** A swarm of fake agent identities generates synthetic positive interaction history, bootstrapping a fraudulent service to a high trust rating before any real agents use it. This is the Yelp review-bombing problem, but automated and at machine speed.
+
+**Mitigation:** Sybil detection on agent IDs submitting trust signals — requiring agent identity attestation from Layer 2 before behavioral signals are counted, plus anomaly detection on interaction velocity and pattern uniformity.
+
+---
+
+### 4. Latency Cloaking 🟡 Medium
+
+**Attack:** A service serves fast, clean responses to the registry's synthetic probe transactions while throttling or degrading service to real user agents — presenting a false latency profile to maintain high ranking. Directly analogous to SEO cloaking.
+
+**Mitigation:** Randomized probe timing with unpredictable agent signatures, combined with real-user telemetry aggregation. Actual agent interactions feed back into latency scoring alongside synthetic probes.
+
+---
+
+### 5. Ontology Poisoning 🔴 Critical
+
+**Attack:** A service registers under a legitimate tag like `health.records.summarize` while actually exfiltrating the records passed to it. The service operates inside the trusted registry perimeter — far more dangerous than an outside attacker because agents will pass sensitive context without additional verification.
+
+**Mitigation:** Sensitive ontology branches (`health.records.*`, `finance.payments.*`) require higher-tier security audit before that branch is accessible. The capability tag alone does not confer the right to access sensitive data.
+
+---
+
+### 6. Cross-Registry Arbitrage 🟠 High
+
+**Attack:** A service banned in Registry A re-registers in Registry B with a clean history, exploiting the current zero-interoperability state. Because registries don't share trust signals, the service maintains a clean reputation in one ecosystem while the ban is invisible to the other.
+
+**Mitigation:** Cross-registry reputation federation via a shared blocklist API — similar to how email providers share spam IP blocklists through services like Spamhaus. AgentLedger brokers this federation as the neutral interoperability layer.
+
+---
+
+## Threat Summary
+
+| # | Threat | Severity | Primary Mitigation |
+|---|--------|----------|-------------------|
+| 1 | Manifest Spoofing | 🔴 Critical | Crypto signing + typosquat detection |
+| 2 | Capability Inflation | 🟠 High | Live capability probing per tag |
+| 3 | Sybil / Trust Gaming | 🔴 Critical | Agent identity attestation (Layer 2) |
+| 4 | Latency Cloaking | 🟡 Medium | Random probes + real telemetry |
+| 5 | Ontology Poisoning | 🔴 Critical | Higher-tier audit for sensitive branches |
+| 6 | Cross-Registry Arbitrage | 🟠 High | Federated blocklist |
+
+## Framework Alignment
+
+| Framework | AgentLedger Coverage |
+|-----------|---------------------|
+| **OWASP LLM Top 10** | Manifest spoofing and ontology poisoning address prompt injection and insecure plugin design |
+| **MITRE ATLAS** | Cross-registry arbitrage maps to supply chain compromise; Sybil attacks map to ML model poisoning |
+| **CoSAI MCP Security Taxonomy** (OASIS, Jan 2026) | All ~40 MCP threat vectors addressed by Trust Ledger behavioral attestation |
+| **EU AI Act** (enforcement Aug 2026) | Audit Chain provides required transparency, auditability, and human oversight records |
