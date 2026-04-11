@@ -1,0 +1,89 @@
+---
+title: "Trust Ledger"
+description: "Blockchain-anchored attestation records providing immutable, cross-registry trust scores"
+---
+
+# Trust Ledger
+
+The Trust Ledger is the security spine of AgentLedger. It solves the fundamental problem that any centralized trust registry creates:
+
+> **Who do you trust to maintain the trust infrastructure?**
+
+The answer is no single entity. Trust attestations in AgentLedger are stored on a distributed ledger, making them immutable, independently verifiable, and resistant to corruption by any single actor — including AgentLedger itself.
+
+## Core Design Principle
+
+**The ledger is the notary, not the database.**
+
+```
+OFF-CHAIN (performance)        ON-CHAIN (trust)
+┌─────────────────────┐       ┌──────────────────────┐
+│ Manifest index      │       │ Attestation events   │
+│ Query API           │  ←→   │ Revocation events    │
+│ Ranking engine      │       │ Version history      │
+│ Search interface    │       │ Cryptographic proofs │
+└─────────────────────┘       └──────────────────────┘
+```
+
+## Three On-Chain Event Types
+
+**1. Attestation Events**
+Auditor-signed records confirming a service passed a capability probe, security review, or compliance certification at a specific point in time.
+
+```json
+{
+  "event_type": "attestation",
+  "service_id": "uuid-of-service",
+  "auditor_id": "uuid-of-auditor",
+  "auditor_signature": "...",
+  "capability_tags_verified": ["travel.air.book", "travel.air.cancel"],
+  "timestamp": "2026-04-10T00:00:00Z",
+  "expiry": "2027-04-10T00:00:00Z"
+}
+```
+
+**2. Revocation Events**
+Records of trust withdrawals, including the reason code and auditor identity. Immutable — cannot be deleted even by the service that was revoked.
+
+```json
+{
+  "event_type": "revocation",
+  "service_id": "uuid-of-service",
+  "reason_code": "capability_misrepresentation",
+  "auditor_id": "uuid-of-auditor",
+  "timestamp": "2026-04-10T00:00:00Z"
+}
+```
+
+**3. Version Events**
+Signed records of manifest changes, creating an immutable history of what a service claimed at any given time. Enables liability attribution — you cannot retroactively change what you declared.
+
+## Trust Score Composite
+
+| Signal | Weight | Source |
+|--------|--------|--------|
+| Registry capability probes | 35% | Live synthetic transactions |
+| Ledger attestation records | 30% | On-chain auditor signatures |
+| Operational metrics | 20% | Uptime, error rates, latency |
+| Cross-registry reputation | 15% | Federated blocklist signals |
+
+Scores are dynamic and update continuously as new evidence is collected.
+
+## Why Blockchain (Not a Centralized DB)
+
+<Warning>
+A centralized trust registry creates a single point of failure and a single point of corruption. If AgentLedger's database is compromised, every trust score in the ecosystem is compromised simultaneously.
+</Warning>
+
+On-chain attestations solve this because:
+
+- Any agent can independently verify a service's trust history **without querying AgentLedger directly**
+- Attestation records cannot be deleted or modified retroactively by any party
+- The audit trail is publicly inspectable — trust is not a black box
+- Cross-registry reputation federation happens natively through shared ledger access
+
+## Chain Selection
+
+Not Ethereum mainnet — too slow and expensive for high-frequency attestation writes. Target architecture: **purpose-built L2 or permissioned chain** optimized for write throughput and low gas costs, similar to the Hyperledger Fabric model used in enterprise supply chain trust systems.
+
+Final chain selection is an open design question. See [Roadmap](/roadmap).
