@@ -1,6 +1,6 @@
 """POST /search endpoint."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_db, get_redis, require_api_key
@@ -18,4 +18,9 @@ async def search_services(
     redis=Depends(get_redis),
 ) -> ServiceSearchResponse:
     """Run a semantic search over registered services."""
+    if not request.query:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="query must not be empty",
+        )
     return await registry.search_services(db=db, redis=redis, request=request)

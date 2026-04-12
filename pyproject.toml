@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+    # AsyncMock GC warning — benign, caused by mock framework internals
+    "ignore:coroutine.*was never awaited:RuntimeWarning",
+]

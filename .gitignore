@@ -43,6 +43,7 @@ db/migrations/versions/__pycache__/
 
 # Testing
 .coverage
+.coverage.*
 htmlcov/
 .pytest_cache/
 

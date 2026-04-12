@@ -445,6 +445,24 @@ def compute_trust_score(
 - 80%+ test coverage
 - Verify FastAPI auto-docs are accurate
 
+#### Running Tests
+
+```bash
+# Run all tests from repo root (testpaths configured in pyproject.toml)
+pytest -q
+
+# Run with coverage
+pytest tests --cov=api --cov=crawler --cov-report=term -q
+```
+
+**Windows note:** If the coverage command fails with a permission error writing
+`.coverage`, redirect the coverage file to a writable path:
+
+```powershell
+$env:COVERAGE_FILE = Join-Path $env:TEMP 'agentledger.coverage'
+pytest tests --cov=api --cov=crawler --cov-report=term -q
+```
+
 ---
 
 ## Acceptance Criteria

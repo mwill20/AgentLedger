@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from api.dependencies import engine, redis_client
+from api.ratelimit import RateLimitMiddleware
 from api.routers import health, manifests, ontology, search, services, verify
 
 
@@ -25,6 +26,9 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+# Rate limiting middleware
+app.add_middleware(RateLimitMiddleware)
 
 # Mount all routers under /v1
 app.include_router(health.router, prefix="/v1", tags=["health"])

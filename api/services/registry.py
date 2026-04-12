@@ -29,6 +29,7 @@ from api.models.service import (
     ServiceSummary,
 )
 from api.services.embedder import embed_text, semantic_similarity, serialize_embedding
+from api.services.typosquat import find_similar_domains
 from api.services.ranker import (
     compute_cost_score,
     compute_latency_score,
@@ -96,7 +97,7 @@ def ensure_ontology_tag_exists(tag: str) -> None:
     """Validate a caller-supplied ontology tag."""
     if tag not in load_ontology_index():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"unknown ontology tag: {tag}",
         )
 
@@ -189,7 +190,7 @@ async def register_manifest(
     if invalid_tags:
         joined = ", ".join(sorted(set(invalid_tags)))
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=f"unknown ontology_tag values: {joined}",
         )
 
@@ -201,7 +202,7 @@ async def register_manifest(
         existing_domain = domain_check.mappings().first()
         if existing_domain and existing_domain["id"] != manifest.service_id:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
                 detail="domain is already registered to a different service_id",
             )
 
@@ -210,6 +211,25 @@ async def register_manifest(
             {"service_id": manifest.service_id},
         )
         is_update = existing_service.mappings().first() is not None
+
+        # Typosquat detection — compare against all registered domains
+        all_domains_result = await db.execute(
+            text("SELECT domain FROM services WHERE id != :service_id"),
+            {"service_id": manifest.service_id},
+        )
+        all_domains = [row["domain"] for row in all_domains_result.mappings().all()]
+        typosquat_matches = find_similar_domains(manifest.domain, all_domains)
+        typosquat_warnings = [
+            f"domain '{manifest.domain}' is similar to existing domain "
+            f"'{m['domain']}' (edit distance {m['distance']})"
+            for m in typosquat_matches
+        ]
+        if typosquat_warnings:
+            logger.warning(
+                "Typosquat warning for %s: %s",
+                manifest.domain,
+                "; ".join(typosquat_warnings),
+            )
 
         trust_score = _trust_score_for_manifest(manifest)
         status_name = _status_for_manifest(manifest)
@@ -437,6 +457,7 @@ async def register_manifest(
         trust_score=trust_score,
         status="updated" if is_update else status_name,
         capabilities_indexed=len(manifest.capabilities),
+        typosquat_warnings=typosquat_warnings,
     )
 
 
