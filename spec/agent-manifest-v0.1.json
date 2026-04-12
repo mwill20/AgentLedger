@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentLedger Agent Manifest v0.1",
+  "description": "JSON Schema for validating agent service manifests published at /.well-known/agent-manifest.json",
+  "type": "object",
+  "required": ["manifest_version", "service_id", "name", "domain", "capabilities", "pricing", "context", "operations", "last_updated"],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "service_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain": {
+      "type": "string",
+      "format": "hostname"
+    },
+    "public_key": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "required": ["id", "ontology_tag", "description"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "ontology_tag": {
+            "type": "string",
+            "pattern": "^[a-z]+\\.[a-z]+\\.[a-z]+$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 20
+          },
+          "input_schema_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "output_schema_url": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "enum": ["per_transaction", "subscription", "freemium", "free"]
+        },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "billing_method": {
+          "type": "string",
+          "enum": ["x402", "stripe", "api_key", "none"]
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "optional": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "data_retention_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "data_sharing": {
+          "type": "string",
+          "enum": ["none", "anonymized", "third_party"]
+        }
+      }
+    },
+    "operations": {
+      "type": "object",
+      "properties": {
+        "uptime_sla_percent": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rate_limits": {
+          "type": "object",
+          "properties": {
+            "rpm": { "type": "integer", "minimum": 0 },
+            "rpd": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "sandbox_url": {
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    },
+    "legal_entity": {
+      "type": "string"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,527 @@
+{
+  "ontology_version": "0.1",
+  "description": "AgentLedger Capability Ontology v0.1 — 65 capability tags across 5 root domains",
+  "domains": ["TRAVEL", "FINANCE", "HEALTH", "COMMERCE", "PRODUCTIVITY"],
+  "tags": [
+    {
+      "tag": "travel.air.search",
+      "domain": "TRAVEL",
+      "function": "travel.air",
+      "label": "Search flights",
+      "description": "Search for available flights by route, date, and passenger count",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "travel.air.book",
+      "domain": "TRAVEL",
+      "function": "travel.air",
+      "label": "Book a flight",
+      "description": "Complete a flight booking including seat selection and payment",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.air.cancel",
+      "domain": "TRAVEL",
+      "function": "travel.air",
+      "label": "Cancel a flight",
+      "description": "Cancel an existing flight reservation and process refund",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.ground.search",
+      "domain": "TRAVEL",
+      "function": "travel.ground",
+      "label": "Search ground transport",
+      "description": "Search for car rentals, rideshares, trains, or bus routes",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "travel.ground.book",
+      "domain": "TRAVEL",
+      "function": "travel.ground",
+      "label": "Book ground transport",
+      "description": "Reserve a car rental, rideshare, train, or bus ticket",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.ground.track",
+      "domain": "TRAVEL",
+      "function": "travel.ground",
+      "label": "Track ground transport",
+      "description": "Track real-time status and location of booked ground transport",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "travel.lodging.search",
+      "domain": "TRAVEL",
+      "function": "travel.lodging",
+      "label": "Search lodging",
+      "description": "Search for hotels, vacation rentals, and other accommodations",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "travel.lodging.book",
+      "domain": "TRAVEL",
+      "function": "travel.lodging",
+      "label": "Book lodging",
+      "description": "Reserve a hotel room or vacation rental with payment",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.lodging.cancel",
+      "domain": "TRAVEL",
+      "function": "travel.lodging",
+      "label": "Cancel lodging",
+      "description": "Cancel a lodging reservation and process refund per policy",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.documents.apply",
+      "domain": "TRAVEL",
+      "function": "travel.documents",
+      "label": "Apply for travel document",
+      "description": "Submit applications for visas, travel permits, or transit passes",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "travel.documents.verify",
+      "domain": "TRAVEL",
+      "function": "travel.documents",
+      "label": "Verify travel document",
+      "description": "Validate passport, visa, or travel permit status and eligibility",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.documents.retrieve",
+      "domain": "TRAVEL",
+      "function": "travel.documents",
+      "label": "Retrieve travel document",
+      "description": "Fetch copies of issued travel documents or boarding passes",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "travel.itinerary.build",
+      "domain": "TRAVEL",
+      "function": "travel.itinerary",
+      "label": "Build travel itinerary",
+      "description": "Compose a multi-segment travel itinerary across transport and lodging",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "finance.payments.send",
+      "domain": "FINANCE",
+      "function": "finance.payments",
+      "label": "Send a payment",
+      "description": "Execute a payment or money transfer to a recipient",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.payments.request",
+      "domain": "FINANCE",
+      "function": "finance.payments",
+      "label": "Request a payment",
+      "description": "Generate a payment request or invoice for a specified amount",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "finance.payments.verify",
+      "domain": "FINANCE",
+      "function": "finance.payments",
+      "label": "Verify a payment",
+      "description": "Confirm payment status, receipt, or settlement details",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "finance.accounts.balance",
+      "domain": "FINANCE",
+      "function": "finance.accounts",
+      "label": "Check account balance",
+      "description": "Retrieve current balance and available funds for an account",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.accounts.history",
+      "domain": "FINANCE",
+      "function": "finance.accounts",
+      "label": "View transaction history",
+      "description": "Retrieve historical transactions for a financial account",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.accounts.open",
+      "domain": "FINANCE",
+      "function": "finance.accounts",
+      "label": "Open an account",
+      "description": "Initiate the opening of a new financial account or wallet",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.investment.quote",
+      "domain": "FINANCE",
+      "function": "finance.investment",
+      "label": "Get investment quote",
+      "description": "Retrieve current price quotes for stocks, bonds, or crypto assets",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "finance.investment.trade",
+      "domain": "FINANCE",
+      "function": "finance.investment",
+      "label": "Execute a trade",
+      "description": "Place a buy or sell order for a financial instrument",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.investment.portfolio",
+      "domain": "FINANCE",
+      "function": "finance.investment",
+      "label": "View portfolio",
+      "description": "Retrieve current holdings, allocation, and performance metrics",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.insurance.quote",
+      "domain": "FINANCE",
+      "function": "finance.insurance",
+      "label": "Get insurance quote",
+      "description": "Request a premium quote for an insurance policy",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "finance.insurance.claim",
+      "domain": "FINANCE",
+      "function": "finance.insurance",
+      "label": "File insurance claim",
+      "description": "Submit an insurance claim with supporting documentation",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "finance.insurance.status",
+      "domain": "FINANCE",
+      "function": "finance.insurance",
+      "label": "Check claim status",
+      "description": "Retrieve the current status of a filed insurance claim",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "finance.insurance.enroll",
+      "domain": "FINANCE",
+      "function": "finance.insurance",
+      "label": "Enroll in insurance plan",
+      "description": "Enroll in or purchase a new insurance policy",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "health.appointments.search",
+      "domain": "HEALTH",
+      "function": "health.appointments",
+      "label": "Search appointments",
+      "description": "Search for available healthcare appointment slots by provider or specialty",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "health.appointments.book",
+      "domain": "HEALTH",
+      "function": "health.appointments",
+      "label": "Book appointment",
+      "description": "Schedule a healthcare appointment with a specific provider",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "health.appointments.cancel",
+      "domain": "HEALTH",
+      "function": "health.appointments",
+      "label": "Cancel appointment",
+      "description": "Cancel an existing healthcare appointment",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "health.records.retrieve",
+      "domain": "HEALTH",
+      "function": "health.records",
+      "label": "Retrieve medical records",
+      "description": "Fetch patient medical records, lab results, or imaging reports",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "health.records.share",
+      "domain": "HEALTH",
+      "function": "health.records",
+      "label": "Share medical records",
+      "description": "Share medical records with another provider or authorized party",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "health.records.update",
+      "domain": "HEALTH",
+      "function": "health.records",
+      "label": "Update medical records",
+      "description": "Submit updates or corrections to existing medical records",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "health.pharmacy.search",
+      "domain": "HEALTH",
+      "function": "health.pharmacy",
+      "label": "Search pharmacies",
+      "description": "Find pharmacies by location, medication availability, or insurance acceptance",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "health.pharmacy.order",
+      "domain": "HEALTH",
+      "function": "health.pharmacy",
+      "label": "Order prescription",
+      "description": "Submit a prescription order for fulfillment or delivery",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "health.pharmacy.refill",
+      "domain": "HEALTH",
+      "function": "health.pharmacy",
+      "label": "Refill prescription",
+      "description": "Request a refill of an existing prescription",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "health.monitoring.read",
+      "domain": "HEALTH",
+      "function": "health.monitoring",
+      "label": "Read health metrics",
+      "description": "Retrieve health monitoring data from wearables or connected devices",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "health.monitoring.alert",
+      "domain": "HEALTH",
+      "function": "health.monitoring",
+      "label": "Set health alert",
+      "description": "Configure alerts for health metric thresholds or anomalies",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "health.monitoring.report",
+      "domain": "HEALTH",
+      "function": "health.monitoring",
+      "label": "Generate health report",
+      "description": "Generate summary reports from longitudinal health monitoring data",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "health.monitoring.connect",
+      "domain": "HEALTH",
+      "function": "health.monitoring",
+      "label": "Connect health device",
+      "description": "Register and connect a health monitoring device or wearable",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.shopping.search",
+      "domain": "COMMERCE",
+      "function": "commerce.shopping",
+      "label": "Search products",
+      "description": "Search for products by category, brand, price, or features",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "commerce.shopping.purchase",
+      "domain": "COMMERCE",
+      "function": "commerce.shopping",
+      "label": "Purchase product",
+      "description": "Complete a product purchase including payment and shipping",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.shopping.return",
+      "domain": "COMMERCE",
+      "function": "commerce.shopping",
+      "label": "Return product",
+      "description": "Initiate a product return and process refund",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.shopping.compare",
+      "domain": "COMMERCE",
+      "function": "commerce.shopping",
+      "label": "Compare products",
+      "description": "Compare features, prices, and reviews across multiple products",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "commerce.subscriptions.subscribe",
+      "domain": "COMMERCE",
+      "function": "commerce.subscriptions",
+      "label": "Start subscription",
+      "description": "Subscribe to a recurring service or product delivery",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.subscriptions.cancel",
+      "domain": "COMMERCE",
+      "function": "commerce.subscriptions",
+      "label": "Cancel subscription",
+      "description": "Cancel an active subscription and stop recurring charges",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.subscriptions.manage",
+      "domain": "COMMERCE",
+      "function": "commerce.subscriptions",
+      "label": "Manage subscription",
+      "description": "Update subscription preferences, tier, or payment method",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.delivery.track",
+      "domain": "COMMERCE",
+      "function": "commerce.delivery",
+      "label": "Track delivery",
+      "description": "Track shipment status and estimated delivery time",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "commerce.delivery.schedule",
+      "domain": "COMMERCE",
+      "function": "commerce.delivery",
+      "label": "Schedule delivery",
+      "description": "Choose or change a delivery date, time window, or address",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "commerce.delivery.reroute",
+      "domain": "COMMERCE",
+      "function": "commerce.delivery",
+      "label": "Reroute delivery",
+      "description": "Redirect an in-transit shipment to a different address",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "commerce.reviews.read",
+      "domain": "COMMERCE",
+      "function": "commerce.reviews",
+      "label": "Read reviews",
+      "description": "Retrieve product or service reviews and aggregate ratings",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "commerce.reviews.write",
+      "domain": "COMMERCE",
+      "function": "commerce.reviews",
+      "label": "Write review",
+      "description": "Submit a product or service review with rating and text",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "commerce.reviews.verify",
+      "domain": "COMMERCE",
+      "function": "commerce.reviews",
+      "label": "Verify purchase for review",
+      "description": "Confirm purchase eligibility before allowing a review submission",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "productivity.calendar.list",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.calendar",
+      "label": "List calendar events",
+      "description": "Retrieve upcoming events and availability from a calendar",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "productivity.calendar.create",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.calendar",
+      "label": "Create calendar event",
+      "description": "Schedule a new event or meeting on a calendar",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.calendar.modify",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.calendar",
+      "label": "Modify calendar event",
+      "description": "Reschedule, update, or cancel an existing calendar event",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.communication.send",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.communication",
+      "label": "Send message",
+      "description": "Send an email, chat message, or notification to recipients",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.communication.read",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.communication",
+      "label": "Read messages",
+      "description": "Retrieve and read incoming emails, chats, or notifications",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.communication.summarize",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.communication",
+      "label": "Summarize communications",
+      "description": "Generate summaries of email threads, chat histories, or meeting notes",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.documents.create",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.documents",
+      "label": "Create document",
+      "description": "Create a new document, spreadsheet, or presentation",
+      "sensitivity_tier": 1
+    },
+    {
+      "tag": "productivity.documents.edit",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.documents",
+      "label": "Edit document",
+      "description": "Modify content in an existing document or spreadsheet",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.documents.share",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.documents",
+      "label": "Share document",
+      "description": "Share a document with specified recipients and permission levels",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.documents.sign",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.documents",
+      "label": "Sign document",
+      "description": "Apply a digital or electronic signature to a document",
+      "sensitivity_tier": 3
+    },
+    {
+      "tag": "productivity.automation.trigger",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.automation",
+      "label": "Trigger automation",
+      "description": "Execute a predefined automation workflow or macro",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.automation.schedule",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.automation",
+      "label": "Schedule automation",
+      "description": "Schedule an automation to run at a specified time or on a trigger",
+      "sensitivity_tier": 2
+    },
+    {
+      "tag": "productivity.automation.monitor",
+      "domain": "PRODUCTIVITY",
+      "function": "productivity.automation",
+      "label": "Monitor automation",
+      "description": "Check status, logs, and outcomes of running or completed automations",
+      "sensitivity_tier": 1
+    }
+  ]
+}

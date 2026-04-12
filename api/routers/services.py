@@ -1,0 +1,5 @@
+"""GET /services — structured query (Phase 3)."""
+
+from fastapi import APIRouter
+
+router = APIRouter()
