@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from functools import lru_cache
 from hashlib import sha256
 from pathlib import Path
@@ -37,7 +38,27 @@ from api.services.ranker import (
     normalize_trust_score,
 )
 
+logger = logging.getLogger(__name__)
+
+CACHE_TTL_SECONDS = 60
+
 _ONTOLOGY_PATH = Path(__file__).resolve().parents[2] / "ontology" / "v0.1.json"
+
+
+async def _cache_get(redis, key: str) -> str | None:
+    """Try to read a cached response from Redis."""
+    try:
+        return await redis.get(key)
+    except Exception:
+        return None
+
+
+async def _cache_set(redis, key: str, value: str) -> None:
+    """Write a response to Redis with TTL."""
+    try:
+        await redis.set(key, value, ex=CACHE_TTL_SECONDS)
+    except Exception:
+        pass  # cache is best-effort
 
 
 @lru_cache
@@ -429,9 +450,17 @@ async def query_services(
     latency_max_ms: int | None = None,
     limit: int = 10,
     offset: int = 0,
+    redis=None,
 ) -> ServiceSearchResponse:
     """Return structured query results for a single ontology tag."""
     ensure_ontology_tag_exists(ontology)
+
+    # Check Redis cache
+    cache_key = f"query:{sha256(json.dumps({'ontology': ontology, 'trust_min': trust_min, 'trust_tier_min': trust_tier_min, 'geo': geo, 'pricing_model': pricing_model, 'latency_max_ms': latency_max_ms, 'limit': limit, 'offset': offset}, sort_keys=True).encode()).hexdigest()}"
+    if redis is not None:
+        cached = await _cache_get(redis, cache_key)
+        if cached is not None:
+            return ServiceSearchResponse.model_validate_json(cached)
 
     result = await db.execute(
         text(
@@ -483,11 +512,24 @@ async def query_services(
     )
     rows = [dict(row) for row in result.mappings().all()]
     results = [_service_summary_from_row(row, match_score=1.0) for row in rows]
-    return ServiceSearchResponse(total=len(results), limit=limit, offset=offset, results=results)
+    response = ServiceSearchResponse(total=len(results), limit=limit, offset=offset, results=results)
+
+    # Write to cache
+    if redis is not None:
+        await _cache_set(redis, cache_key, response.model_dump_json())
+
+    return response
 
 
-async def search_services(db: AsyncSession, request: SearchRequest) -> ServiceSearchResponse:
+async def search_services(db: AsyncSession, request: SearchRequest, redis=None) -> ServiceSearchResponse:
     """Return semantic search results using local embeddings."""
+    # Check Redis cache
+    cache_key = f"search:{sha256(json.dumps({'query': request.query, 'trust_min': request.trust_min, 'geo': request.geo, 'limit': request.limit, 'offset': request.offset}, sort_keys=True).encode()).hexdigest()}"
+    if redis is not None:
+        cached = await _cache_get(redis, cache_key)
+        if cached is not None:
+            return ServiceSearchResponse.model_validate_json(cached)
+
     result = await db.execute(
         text(
             """
@@ -532,12 +574,18 @@ async def search_services(db: AsyncSession, request: SearchRequest) -> ServiceSe
 
     ranked.sort(key=lambda item: item.rank_score, reverse=True)
     sliced = ranked[request.offset : request.offset + request.limit]
-    return ServiceSearchResponse(
+    response = ServiceSearchResponse(
         total=len(ranked),
         limit=request.limit,
         offset=request.offset,
         results=sliced,
     )
+
+    # Write to cache
+    if redis is not None:
+        await _cache_set(redis, cache_key, response.model_dump_json())
+
+    return response
 
 
 async def get_service_detail(db: AsyncSession, service_id: UUID) -> ServiceDetail:

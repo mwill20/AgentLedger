@@ -12,7 +12,7 @@ def test_post_search_returns_semantic_matches(client, api_key_headers, monkeypat
     """POST /v1/search should return ranked semantic results."""
     service_id = uuid4()
 
-    async def fake_search_services(db, request):
+    async def fake_search_services(db, request, **kwargs):
         return ServiceSearchResponse(
             total=1,
             limit=request.limit,

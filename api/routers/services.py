@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_db, require_api_key
+from api.dependencies import get_db, get_redis, require_api_key
 from api.models.service import ServiceDetail, ServiceSearchResponse
 from api.services import registry
 
@@ -23,10 +23,12 @@ async def list_services(
     limit: int = 10,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> ServiceSearchResponse:
     """Return structured search results for a specific ontology tag."""
     return await registry.query_services(
         db=db,
+        redis=redis,
         ontology=ontology,
         trust_min=trust_min,
         trust_tier_min=trust_tier_min,
