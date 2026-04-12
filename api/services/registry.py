@@ -458,10 +458,10 @@ async def query_services(
               AND s.is_banned = false
               AND s.trust_score >= :trust_min
               AND s.trust_tier >= :trust_tier_min
-              AND (:pricing_model IS NULL OR p.pricing_model = :pricing_model)
-              AND (:latency_max_ms IS NULL OR c.avg_latency_ms IS NULL OR c.avg_latency_ms <= :latency_max_ms)
+              AND (CAST(:pricing_model AS TEXT) IS NULL OR p.pricing_model = :pricing_model)
+              AND (CAST(:latency_max_ms AS INTEGER) IS NULL OR c.avg_latency_ms IS NULL OR c.avg_latency_ms <= :latency_max_ms)
               AND (
-                    :geo IS NULL
+                    CAST(:geo AS TEXT) IS NULL
                     OR o.geo_restrictions IS NULL
                     OR COALESCE(array_length(o.geo_restrictions, 1), 0) = 0
                     OR :geo = ANY(o.geo_restrictions)
@@ -512,7 +512,7 @@ async def search_services(db: AsyncSession, request: SearchRequest) -> ServiceSe
               AND s.is_banned = false
               AND s.trust_score >= :trust_min
               AND (
-                    :geo IS NULL
+                    CAST(:geo AS TEXT) IS NULL
                     OR o.geo_restrictions IS NULL
                     OR COALESCE(array_length(o.geo_restrictions, 1), 0) = 0
                     OR :geo = ANY(o.geo_restrictions)
