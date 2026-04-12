@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     api_version: str = "0.1.0"
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    api_keys: str = "dev-api-key"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
