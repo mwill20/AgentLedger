@@ -1,0 +1,88 @@
+---
+title: "Roadmap"
+description: "The four-phase path from open standard to infrastructure status"
+---
+
+# Roadmap
+
+AgentLedger's long-term trajectory follows the path of every durable infrastructure business: **ubiquity before monetization, standards before services, federation before control.**
+
+## The Strategic Window
+
+The window to establish a neutral, open trust and discovery layer is measured in months, not years. Domain-specific registries are forming faster than a universal standard is converging. The entity that establishes the open standard before platform players impose closed alternatives will define how trust works in the agent web.
+
+> The window is closing the same way it closed for open networking standards in the 1990s — not with a dramatic battle but with gradual adoption of whichever approach gets to critical mass first.
+
+## Four Phases
+
+### Phase 1 — The Standard
+**Publish the AgentLedger Manifest Specification and Capability Ontology as open standards.**
+
+Build community around the spec before building the product. The ontology must be adopted as a shared vocabulary before the registry has value. This phase is about standards, not software.
+
+**Deliverables:**
+- Agent Manifest Specification v1.0 (JSON Schema)
+- Capability Ontology v0.1 (5 roots, 65 L3 tags) — published here
+- Developer documentation (this site)
+- Community feedback process
+
+**Status:** 🟡 In Progress
+
+---
+
+### Phase 2 — The Registry
+**Launch the reference registry with the first 1,000 manually onboarded, capability-probed services across the five root ontology domains.**
+
+The reference registry is the proof of concept that the spec works at scale. Manually onboarding the first 1,000 services ensures quality and establishes the trust tier standards that all subsequent automated onboarding will be measured against.
+
+**Deliverables:**
+- Registry API (structured + NL query modes)
+- Capability probing infrastructure
+- Trust tier verification pipeline
+- Developer SDK
+
+**Status:** ⬜ Planned
+
+---
+
+### Phase 3 — The Ledger
+**Deploy the Trust Ledger with blockchain-anchored attestations and activate cross-registry federation via the federated blocklist API.**
+
+This phase transforms AgentLedger from a registry into infrastructure. When the Trust Ledger is live, trust attestations become independently verifiable by any agent without querying AgentLedger directly — the system becomes trustworthy without requiring trust in AgentLedger itself.
+
+**Deliverables:**
+- Trust Ledger on-chain deployment (chain TBD — L2 or permissioned)
+- Attestation event API
+- Cross-registry blocklist federation API
+- Agent SDK for independent trust verification
+
+**Status:** ⬜ Planned
+
+---
+
+### Phase 4 — The Liability Layer
+**Launch the Audit Chain and enable the Liability Layer — the first complete infrastructure stack for accountable autonomous agent commerce.**
+
+The Audit Chain threads through all previous layers and enables the first true accountability primitives for agent actions: dispute resolution, liability attribution, regulatory compliance, and eventually insurance products for autonomous transactions.
+
+**Deliverables:**
+- Audit Chain deployment
+- Dispute resolution API
+- EU AI Act compliance reporting
+- Liability Layer framework (governance + insurance product design)
+
+**Status:** ⬜ Planned
+
+---
+
+## Open Design Questions
+
+These architectural decisions are intentionally left open for community input:
+
+- [ ] **Layer 2: Identity & Attestation** — how do agents get verified identities?
+- [ ] **Blockchain chain selection** — L2 vs. Hyperledger vs. custom permissioned?
+- [ ] **Manifest Spec v1.0** — formal JSON Schema definition
+- [ ] **Privacy-preserving context disclosure** — how does an agent share only what's needed?
+- [ ] **Liability framework** — how are disputes adjudicated? Who bears the cost of agent errors?
+
+Feedback and collaboration are welcomed. Open an issue on [GitHub](https://github.com/mwill20/AgentLedger).

@@ -1,0 +1,48 @@
+---
+title: "The Problem"
+description: "Why the agent web needs a trust and discovery layer — and why it needs it now"
+---
+
+# The Problem
+
+## 1.1 The Build Layer Is Collapsing
+
+AI has eliminated the marginal cost of building software. In 2026, generating a functional web application, API service, or agent-facing tool costs minutes and approaches zero dollars. This abundance creates a new bottleneck: not how to build services, but how agents find them, verify them, and safely interact with them.
+
+The economic model of the internet is shifting. When supply is infinite, **distribution and trust become the scarce resources**. The businesses that will capture disproportionate value in the agentic era are not those that build the best service — they are those that control how agents discover, evaluate, and route to services.
+
+## 1.2 The Discovery Gap
+
+Traditional search infrastructure is built for human cognition: keyword matching, link graphs, click-through signals, visual rendering. Agents require fundamentally different infrastructure. They do not browse. They query. They need structured, machine-readable declarations of capability, pricing, reliability, latency, data requirements, and trust posture — delivered in a format that can be evaluated and acted upon without human interpretation.
+
+No such standard exists. Services that want to serve agents must either build custom integrations with each agent platform (the N×N problem) or hope that agent developers manually discover and implement their API. This is not a scalable architecture for a world with millions of agent-callable services.
+
+## 1.3 The Trust Vacuum
+
+<Warning>
+An agent routing a user's medical records or payment credentials through an unverified service is not a theoretical risk. It is an architectural certainty in a world where service discovery has no trust layer.
+</Warning>
+
+The existing protocol stack explicitly scopes out trust:
+
+| Protocol | Defines | Does NOT Define |
+|----------|---------|-----------------|
+| MCP | How to call a tool | Whether the tool is safe to call |
+| A2A | How agents delegate tasks | Whether the delegated agent is legitimate |
+| agents.txt | What endpoints agents may access | Whether the declaring service is who it claims to be |
+
+This gap is not an oversight. It is a deliberate scope decision by protocol designers who correctly identified that trust is a separate, harder problem. The consequence: every agent operating on these protocols today operates in a trust vacuum. Services are assumed legitimate unless proven otherwise — after harm has already occurred.
+
+## 1.4 The Fragmentation Problem
+
+As of Q1 2026, there are more than ten active IETF drafts competing to define agent discovery, each with different schemas, different trust models, and different assumptions about governance. Domain-specific registries are forming independently:
+
+- **Google UCP** — commerce-specific agent transactions
+- **IAB AAMP** — agent-to-agent advertising marketplace
+- **Huawei A2A-T** — telecom-specific agent discovery
+
+An agent listed in one registry is invisible to clients querying another. This fragmentation is not temporary coordination friction. It is the natural trajectory of a standards process without a neutral infrastructure layer to federate across competing registries.
+
+<Info>
+The entity that provides the federation layer does not need to win the standards war. It needs to make the standards war irrelevant to agents.
+</Info>

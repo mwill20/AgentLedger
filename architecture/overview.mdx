@@ -1,0 +1,44 @@
+---
+title: "Architecture Overview"
+description: "How AgentLedger's three components work together to solve trust and discovery"
+---
+
+# Architecture Overview
+
+AgentLedger is composed of three integrated components, each addressing a distinct gap in the current protocol stack while interoperating with existing standards.
+
+## The Stack Position
+
+```
+┌─────────────────────────────────────┐
+│       ORCHESTRATION FRAMEWORKS      │  ← LangGraph, CrewAI, etc.
+├─────────────────────────────────────┤
+│           AGENTLEDGER               │  ← Trust + Discovery layer
+│  ┌──────────┬──────────┬─────────┐  │
+│  │ Manifest │  Trust   │  Audit  │  │
+│  │ Registry │  Ledger  │  Chain  │  │
+│  └──────────┴──────────┴─────────┘  │
+├─────────────────────────────────────┤
+│     COMMUNICATION PROTOCOLS         │  ← MCP, A2A, agents.txt
+├─────────────────────────────────────┤
+│       AGENT-NATIVE SERVICES         │  ← The actual APIs
+└─────────────────────────────────────┘
+```
+
+AgentLedger does not compete with MCP or A2A. It sits above them and makes them trustworthy.
+
+## Component Summary
+
+| Component | Function | Analogous to |
+|-----------|----------|--------------|
+| [Manifest Registry](/architecture/manifest-registry) | Structured capability ontology and semantic discovery API | DNS + App Store + NPM, built agent-first |
+| [Trust Ledger](/architecture/trust-ledger) | Blockchain-anchored attestation records providing immutable, cross-registry trust scores | Certificate Authority infrastructure, but decentralized |
+| [Audit Chain](/architecture/audit-chain) | Tamper-proof action logs enabling liability attribution | Financial transaction ledger + legal chain of custody |
+
+## Design Principles
+
+**Security-first.** Every architectural decision begins with the assumption that the system will be attacked, that attackers will be well-resourced, and that the damage from a compromised trust registry is qualitatively different from a compromised application. A corrupted trust layer does not harm one user — it harms every agent that routes through it.
+
+**Ledger is the notary, not the database.** Off-chain infrastructure handles the manifest index, query API, and ranking engine for performance. On-chain infrastructure provides the cryptographic proof layer that makes trust claims independently auditable.
+
+**Open standard, reference implementation.** The capability ontology is published as an open standard. The registry is the reference implementation. The moat is the vocabulary, not the store.

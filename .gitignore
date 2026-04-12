@@ -1,7 +1,19 @@
+# Prompt files — local reference only, never commit
+*_prompt.md
+*_prompt.txt
+prompts/
+*.prompt.md
+
+# Environment
+.env
+.env.local
+.env.*.local
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
 *.so
 *.egg-info/
 dist/
@@ -13,9 +25,8 @@ venv/
 env/
 .venv/
 
-# Environment
-.env
-*.env.local
+# Node
+node_modules/
 
 # IDE
 .vscode/
@@ -25,6 +36,7 @@ env/
 
 # Docker
 docker-compose.override.yml
+.docker/
 
 # Alembic
 db/migrations/versions/__pycache__/
@@ -38,8 +50,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Prompt files (local reference only)
-*_prompt.md
+# Logs
+*.log
+logs/
 
 # Model cache
 models/

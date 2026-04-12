@@ -1,0 +1,111 @@
+{
+  "manifest_version": "1.0",
+  "service_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "name": "FlightBookerPro",
+  "domain": "flightbookerpro.com",
+  "legal_entity": "FlightBookerPro Inc.",
+  "public_key": null,
+  "last_updated": "2026-04-10T00:00:00Z",
+  "capabilities": [
+    {
+      "id": "book_flight",
+      "ontology_tag": "travel.air.book",
+      "description": "Books a one-way or round-trip flight given origin city, destination city, travel dates, and budget constraints. Returns a booking confirmation number and full itinerary.",
+      "input_schema_url": "https://flightbookerpro.com/openapi.json#/components/schemas/BookFlightRequest",
+      "output_schema_url": "https://flightbookerpro.com/openapi.json#/components/schemas/BookingConfirmation",
+      "success_rate_30d": 0.97,
+      "avg_latency_ms": 1200
+    },
+    {
+      "id": "search_flights",
+      "ontology_tag": "travel.air.search",
+      "description": "Searches available flights between two airports for given dates and returns ranked options with pricing, layovers, and airline details.",
+      "input_schema_url": "https://flightbookerpro.com/openapi.json#/components/schemas/SearchFlightsRequest",
+      "output_schema_url": "https://flightbookerpro.com/openapi.json#/components/schemas/FlightSearchResults",
+      "success_rate_30d": 0.99,
+      "avg_latency_ms": 800
+    },
+    {
+      "id": "cancel_flight",
+      "ontology_tag": "travel.air.cancel",
+      "description": "Cancels an existing flight booking by confirmation number. Returns cancellation confirmation and refund eligibility status.",
+      "input_schema_url": "https://flightbookerpro.com/openapi.json#/components/schemas/CancelFlightRequest",
+      "output_schema_url": "https://flightbookerpro.com/openapi.json#/components/schemas/CancellationConfirmation",
+      "success_rate_30d": 0.95,
+      "avg_latency_ms": 600
+    }
+  ],
+  "pricing": {
+    "model": "per_transaction",
+    "tiers": [
+      {
+        "name": "standard",
+        "cost_usd": 0.85,
+        "per": "transaction"
+      },
+      {
+        "name": "volume",
+        "cost_usd": 0.40,
+        "per": "transaction",
+        "min_volume": 1000
+      }
+    ],
+    "billing_method": "x402",
+    "currency": "USD"
+  },
+  "context": {
+    "required": [
+      {
+        "field": "origin_city",
+        "type": "string",
+        "sensitivity": "low"
+      },
+      {
+        "field": "destination_city",
+        "type": "string",
+        "sensitivity": "low"
+      },
+      {
+        "field": "travel_dates",
+        "type": "daterange",
+        "sensitivity": "low"
+      },
+      {
+        "field": "budget_usd",
+        "type": "number",
+        "sensitivity": "financial"
+      }
+    ],
+    "optional": [
+      {
+        "field": "passenger_count",
+        "type": "integer",
+        "sensitivity": "low"
+      },
+      {
+        "field": "seat_preference",
+        "type": "string",
+        "sensitivity": "low"
+      },
+      {
+        "field": "frequent_flyer_number",
+        "type": "string",
+        "sensitivity": "pii_medium"
+      }
+    ],
+    "data_retention_days": 0,
+    "data_sharing": "none",
+    "privacy_policy_url": "https://flightbookerpro.com/privacy"
+  },
+  "operations": {
+    "uptime_sla_percent": 99.9,
+    "rate_limits": {
+      "rpm": 100,
+      "rpd": 10000
+    },
+    "geo_restrictions": ["US", "CA", "GB", "EU"],
+    "compliance_certifications": ["SOC2", "GDPR", "CCPA"],
+    "sandbox_url": "https://sandbox.flightbookerpro.com",
+    "deprecation_notice_days": 30
+  }
+}

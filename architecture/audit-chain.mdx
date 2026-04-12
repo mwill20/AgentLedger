@@ -1,0 +1,75 @@
+---
+title: "Audit Chain"
+description: "Tamper-proof action logs enabling liability attribution for autonomous agent transactions"
+---
+
+# Audit Chain
+
+Every consequential action an agent takes on behalf of a user — booking a flight, executing a payment, signing a document — must be attributable. The Audit Chain provides tamper-proof records of agent actions for dispute resolution, liability attribution, and regulatory compliance.
+
+## Why It Must Exist From Day One
+
+<Warning>
+The Audit Chain cannot be constructed after the fact. It must be present from the first agent transaction. Insurance products, governance frameworks, and EU AI Act compliance (enforcement August 2026) all depend on it — retroactive reconstruction is not legally or technically valid.
+</Warning>
+
+## Anatomy of an Audit Record
+
+Each record captures the full chain of custody from user intent through agent action to service response:
+
+```json
+{
+  "record_id": "uuid-v4",
+  "timestamp": "2026-04-10T14:32:00Z",
+  "agent": {
+    "verified_identity": "agent-id-from-layer-2",
+    "platform": "claude-sonnet-4"
+  },
+  "service": {
+    "id": "uuid-of-service",
+    "manifest_version": "1.2.0",
+    "manifest_hash": "sha256:..."
+  },
+  "action": {
+    "capability_invoked": "travel.air.book",
+    "context_provided": "[REDACTED — PII stripped]",
+    "outcome": "success",
+    "confirmation_id": "FLIGHT-ABC123"
+  },
+  "trust_ledger_ref": {
+    "attestation_hash": "sha256:...",
+    "ledger_block": 847291
+  }
+}
+```
+
+The `trust_ledger_ref` field links every agent action to the Trust Ledger entry that authorized it — creating an **unbroken cryptographic chain of custody**.
+
+## What the Audit Chain Enables
+
+| Use Case | How |
+|----------|-----|
+| **Dispute resolution** | Prove exactly what capability was invoked and what the service declared at that moment |
+| **Liability attribution** | Determine whether failure was agent error, service error, or misrepresentation |
+| **Regulatory compliance** | EU AI Act requires transparency and auditability records for high-risk AI systems |
+| **Insurance products** | Actuarial data for agent action liability insurance (Layer 6) |
+| **Refund processing** | Verified outcome records support automated refund triggers |
+
+## The Liability Layer Connection
+
+The Audit Chain is the infrastructure prerequisite for **Layer 6: Liability** — where insurance products and governance frameworks for autonomous agent actions will eventually be built.
+
+```
+Layer 6: Liability (insurance, governance)     ← depends on Layer 5
+Layer 5: Orchestration & Taste                 ← depends on Layer 4  
+Layer 4: Context Matching                      ← depends on Layer 3
+Layer 3: Trust & Verification                  ← depends on Layer 2
+Layer 2: Identity & Attestation                ← depends on Layer 1
+Layer 1: Discovery & Distribution              ← BUILT FIRST
+         ↑
+    Audit Chain threads through all layers
+```
+
+## Privacy Design
+
+Audit records are PII-stripped before storage. The context field contains only a cryptographic hash of the original context — enough to verify what was passed, not enough to reconstruct it. Full context reconstruction requires a key held only by the authorized user, not by AgentLedger.
