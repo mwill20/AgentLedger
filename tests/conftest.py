@@ -4,11 +4,16 @@ from __future__ import annotations
 
 from uuid import uuid4
 
+import os
+
 import pytest
 from fastapi.testclient import TestClient
 
-from api.dependencies import get_db
-from api.main import app
+# Ensure test API key is configured before importing app
+os.environ.setdefault("API_KEYS", "test-api-key")
+
+from api.dependencies import get_db  # noqa: E402
+from api.main import app  # noqa: E402
 
 
 class DummySession:
@@ -18,7 +23,7 @@ class DummySession:
 @pytest.fixture
 def api_key_headers() -> dict[str, str]:
     """Default auth header for protected endpoints."""
-    return {"X-API-Key": "dev-api-key"}
+    return {"X-API-Key": "test-api-key"}
 
 
 @pytest.fixture

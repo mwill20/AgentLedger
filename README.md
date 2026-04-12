@@ -11,10 +11,10 @@ docker compose up --build
 Once running:
 
 - **Health check:** `GET http://localhost:8000/v1/health`
-- **Ontology:** `GET http://localhost:8000/v1/ontology` with `X-API-Key: dev-api-key`
-- **Register manifest:** `POST http://localhost:8000/v1/manifests` with `X-API-Key: dev-api-key`
-- **Structured query:** `GET http://localhost:8000/v1/services?ontology=travel.air.book` with `X-API-Key: dev-api-key`
-- **Semantic query:** `POST http://localhost:8000/v1/search` with `X-API-Key: dev-api-key`
+- **Ontology:** `GET http://localhost:8000/v1/ontology` with `X-API-Key: dev-local-only`
+- **Register manifest:** `POST http://localhost:8000/v1/manifests` with `X-API-Key: dev-local-only`
+- **Structured query:** `GET http://localhost:8000/v1/services?ontology=travel.air.book` with `X-API-Key: dev-local-only`
+- **Semantic query:** `POST http://localhost:8000/v1/search` with `X-API-Key: dev-local-only`
 - **API docs:** `http://localhost:8000/docs`
 
 ## Architecture

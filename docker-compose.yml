@@ -34,6 +34,7 @@ services:
       DATABASE_URL_SYNC: postgresql://agentledger:agentledger@db:5432/agentledger
       REDIS_URL: redis://redis:6379/0
       API_VERSION: 0.1.0
+      API_KEYS: ${API_KEYS:-dev-local-only}
     depends_on:
       db:
         condition: service_healthy
