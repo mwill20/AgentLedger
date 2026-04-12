@@ -13,8 +13,8 @@ alembic==1.15.2
 # Redis
 redis==5.3.0
 
-# Embeddings (Phase 2 — uncomment when needed)
-# sentence-transformers==4.1.0
+# Embeddings
+sentence-transformers==4.1.0
 
 # Crawler (Phase 4 — uncomment when needed)
 # celery[redis]==5.5.2
