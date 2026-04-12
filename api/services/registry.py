@@ -522,13 +522,20 @@ async def query_services(
 
 
 async def search_services(db: AsyncSession, request: SearchRequest, redis=None) -> ServiceSearchResponse:
-    """Return semantic search results using local embeddings."""
+    """Return semantic search results using pgvector cosine similarity."""
     # Check Redis cache
     cache_key = f"search:{sha256(json.dumps({'query': request.query, 'trust_min': request.trust_min, 'geo': request.geo, 'limit': request.limit, 'offset': request.offset}, sort_keys=True).encode()).hexdigest()}"
     if redis is not None:
         cached = await _cache_get(redis, cache_key)
         if cached is not None:
             return ServiceSearchResponse.model_validate_json(cached)
+
+    # Embed query once, push vector into pgvector for DB-side cosine search
+    query_embedding = serialize_embedding(embed_text(request.query))
+
+    # pgvector <=> returns cosine distance (0 = identical, 2 = opposite)
+    # We fetch a generous candidate set and apply the full ranking algorithm
+    candidate_limit = max(request.limit * 5, 50)
 
     result = await db.execute(
         text(
@@ -545,7 +552,8 @@ async def search_services(db: AsyncSession, request: SearchRequest, redis=None) 
                 c.avg_latency_ms,
                 c.success_rate_30d,
                 c.is_verified,
-                p.pricing_model
+                p.pricing_model,
+                1.0 - (c.embedding <=> CAST(:query_embedding AS vector)) AS cosine_similarity
             FROM services s
             JOIN service_capabilities c ON c.service_id = s.id
             LEFT JOIN service_operations o ON o.service_id = s.id
@@ -553,26 +561,59 @@ async def search_services(db: AsyncSession, request: SearchRequest, redis=None) 
             WHERE s.is_active = true
               AND s.is_banned = false
               AND s.trust_score >= :trust_min
+              AND c.embedding IS NOT NULL
               AND (
                     CAST(:geo AS TEXT) IS NULL
                     OR o.geo_restrictions IS NULL
                     OR COALESCE(array_length(o.geo_restrictions, 1), 0) = 0
                     OR :geo = ANY(o.geo_restrictions)
               )
+            ORDER BY c.embedding <=> CAST(:query_embedding AS vector)
+            LIMIT :candidate_limit
             """
         ),
-        {"trust_min": request.trust_min, "geo": request.geo},
+        {
+            "query_embedding": query_embedding,
+            "trust_min": request.trust_min,
+            "geo": request.geo,
+            "candidate_limit": candidate_limit,
+        },
     )
 
-    ranked: list[ServiceSummary] = []
+    # Group capabilities by service_id so each service appears once
+    service_map: dict[UUID, ServiceSummary] = {}
     for row in (dict(item) for item in result.mappings().all()):
-        candidate_text = f'{row["name"]} {row["ontology_tag"]} {row["description"]}'
-        match_score = semantic_similarity(request.query, candidate_text)
+        match_score = max(0.0, min(1.0, float(row["cosine_similarity"])))
         if match_score <= 0:
             continue
-        ranked.append(_service_summary_from_row(row, match_score=match_score))
+        sid = UUID(str(row["service_id"]))
+        if sid not in service_map:
+            service_map[sid] = _service_summary_from_row(row, match_score=match_score)
+        else:
+            # Append this capability to the existing service entry
+            cap = MatchedCapability(
+                ontology_tag=row["ontology_tag"],
+                description=row["description"],
+                is_verified=row.get("is_verified", False),
+                avg_latency_ms=row.get("avg_latency_ms"),
+                success_rate_30d=row.get("success_rate_30d"),
+                match_score=match_score,
+            )
+            service_map[sid].matched_capabilities.append(cap)
+            # Update rank_score to reflect the best capability match
+            best_match = max(
+                c.match_score for c in service_map[sid].matched_capabilities
+            )
+            service_map[sid].rank_score = compute_rank_score(
+                capability_match=best_match,
+                trust_score=normalize_trust_score(service_map[sid].trust_score),
+                latency_score=compute_latency_score(row.get("avg_latency_ms")),
+                cost_score=compute_cost_score(row.get("pricing_model")),
+                reliability_score=compute_reliability_score(row.get("success_rate_30d")),
+                context_fit=1.0,
+            )
 
-    ranked.sort(key=lambda item: item.rank_score, reverse=True)
+    ranked = sorted(service_map.values(), key=lambda item: item.rank_score, reverse=True)
     sliced = ranked[request.offset : request.offset + request.limit]
     response = ServiceSearchResponse(
         total=len(ranked),
