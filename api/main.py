@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from api.dependencies import engine, redis_client
-from api.routers import health, ontology
+from api.routers import health, manifests, ontology, search, services
 
 
 @asynccontextmanager
@@ -14,7 +14,8 @@ async def lifespan(app: FastAPI):
     # Startup: verify connections
     yield
     # Shutdown: close connections
-    await engine.dispose()
+    if engine is not None:
+        await engine.dispose()
     await redis_client.aclose()
 
 
@@ -28,3 +29,6 @@ app = FastAPI(
 # Mount all routers under /v1
 app.include_router(health.router, prefix="/v1", tags=["health"])
 app.include_router(ontology.router, prefix="/v1", tags=["ontology"])
+app.include_router(manifests.router, prefix="/v1", tags=["manifests"])
+app.include_router(services.router, prefix="/v1", tags=["services"])
+app.include_router(search.router, prefix="/v1", tags=["search"])
