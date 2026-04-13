@@ -46,6 +46,7 @@ db/migrations/versions/__pycache__/
 .coverage.*
 htmlcov/
 .pytest_cache/
+pytest-cache-files-*/
 
 # OS
 .DS_Store
