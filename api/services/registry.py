@@ -34,6 +34,7 @@ from api.services.embedder import (
     semantic_similarity,
     serialize_embedding,
 )
+from api.services import service_identity
 from api.services.typosquat import find_similar_domains
 from api.services.ranker import (
     compute_cost_score,
@@ -199,6 +200,9 @@ async def register_manifest(
             detail=f"unknown ontology_tag values: {joined}",
         )
 
+    if manifest.identity is not None or manifest.signature is not None:
+        await service_identity.validate_signed_manifest(manifest=manifest)
+
     manifest_hash = _manifest_hash(manifest)
     raw_manifest_json = json.dumps(manifest.model_dump(mode="json"))
     trust_score = _trust_score_for_manifest(manifest)
@@ -296,6 +300,7 @@ async def register_manifest(
                     trust_tier = EXCLUDED.trust_tier,
                     trust_score = EXCLUDED.trust_score,
                     is_active = EXCLUDED.is_active,
+                    last_verified_at = NULL,
                     last_crawled_at = NOW(),
                     updated_at = NOW()
                 """

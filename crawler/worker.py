@@ -26,6 +26,7 @@ def create_celery_app() -> Celery | None:
     app.conf.include = [
         "crawler.tasks.crawl",
         "crawler.tasks.expire_identity_records",
+        "crawler.tasks.revalidate_service_identity",
         "crawler.tasks.verify_domain",
     ]
     app.conf.beat_schedule = {
@@ -40,6 +41,10 @@ def create_celery_app() -> Celery | None:
         "expire-identity-records": {
             "task": "crawler.expire_identity_records",
             "schedule": 60,  # every minute
+        },
+        "revalidate-service-identity": {
+            "task": "crawler.revalidate_service_identity",
+            "schedule": 60 * 60 * 24,  # every 24 hours
         },
     }
     return app

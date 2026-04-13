@@ -61,7 +61,7 @@ async def _store_proof_nonce(redis, principal_did: str, nonce: str) -> None:
         return
     if stored is False:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="proof nonce has already been used",
         )
 
@@ -93,7 +93,7 @@ async def request_session(
     )
     if age_seconds > settings.proof_nonce_ttl_seconds:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="proof timestamp is outside the allowed replay window",
         )
 
@@ -103,7 +103,7 @@ async def request_session(
         public_jwk=principal.public_key_jwk,
     ):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="invalid session proof signature",
         )
 
@@ -122,6 +122,7 @@ async def request_session(
                 SELECT
                     s.id AS service_id,
                     s.domain,
+                    s.last_verified_at,
                     t.sensitivity_tier
                 FROM services s
                 JOIN service_capabilities c
@@ -145,6 +146,11 @@ async def request_session(
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="service capability not found",
+            )
+        if service_row["last_verified_at"] is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="service identity is not active",
             )
 
         if service_row["sensitivity_tier"] >= 3:
@@ -467,6 +473,24 @@ async def redeem_session(
         )
         redeemed_row = redeem_result.mappings().first()
         if redeemed_row:
+            await db.execute(
+                text(
+                    """
+                    INSERT INTO crawl_events (service_id, event_type, domain, details, created_at)
+                    VALUES (
+                        :service_id,
+                        'session_redeemed',
+                        :service_domain,
+                        '{}'::jsonb,
+                        NOW()
+                    )
+                    """
+                ),
+                {
+                    "service_id": service_row["id"],
+                    "service_domain": request.service_domain,
+                },
+            )
             await db.commit()
             return SessionRedeemResponse(
                 status="accepted",
@@ -495,9 +519,48 @@ async def redeem_session(
         )
         existing_row = existing_result.mappings().first()
         if existing_row and existing_row["was_used"]:
+            await db.execute(
+                text(
+                    """
+                    INSERT INTO crawl_events (service_id, event_type, domain, details, created_at)
+                    VALUES (
+                        :service_id,
+                        'session_redeem_rejected',
+                        :service_domain,
+                        CAST(:details AS JSONB),
+                        NOW()
+                    )
+                    """
+                ),
+                {
+                    "service_id": service_row["id"],
+                    "service_domain": request.service_domain,
+                    "details": json.dumps({"reason": "already_redeemed"}),
+                },
+            )
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="session assertion has already been redeemed",
+            )
+        if existing_row:
+            await db.execute(
+                text(
+                    """
+                    INSERT INTO crawl_events (service_id, event_type, domain, details, created_at)
+                    VALUES (
+                        :service_id,
+                        'session_redeem_rejected',
+                        :service_domain,
+                        CAST(:details AS JSONB),
+                        NOW()
+                    )
+                    """
+                ),
+                {
+                    "service_id": service_row["id"],
+                    "service_domain": request.service_domain,
+                    "details": json.dumps({"reason": "expired_or_invalid"}),
+                },
             )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

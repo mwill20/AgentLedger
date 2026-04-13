@@ -52,3 +52,17 @@ def test_post_manifests_rejects_duplicate_ontology_tags(
     response = client.post("/v1/manifests", json=sample_manifest_payload, headers=api_key_headers)
 
     assert response.status_code == 422
+
+
+def test_post_manifests_rejects_partial_identity_blocks(
+    client, api_key_headers, sample_manifest_payload
+):
+    """Signed manifest fields must appear together when any service identity block is present."""
+    sample_manifest_payload["identity"] = {
+        "did": "did:web:skybridge.example",
+        "verification_method": "did:web:skybridge.example#key-1",
+    }
+
+    response = client.post("/v1/manifests", json=sample_manifest_payload, headers=api_key_headers)
+
+    assert response.status_code == 422

@@ -148,3 +148,58 @@ def test_post_identity_agents_revoke_requires_admin_key(
 
     assert response.status_code == 200
     assert response.json()["reason_code"] == "key_compromised"
+
+
+def test_get_identity_services_did_returns_document(client, monkeypatch):
+    """GET /v1/identity/services/{domain}/did should return the did:web document."""
+
+    async def fake_resolve_service_did_document(domain, redis=None, force_refresh=False):
+        return {
+            "did": f"did:web:{domain}",
+            "did_document": {"id": f"did:web:{domain}", "verificationMethod": []},
+            "cache_status": "hit",
+            "validated_at": "2026-04-13T12:00:00Z",
+        }
+
+    monkeypatch.setattr(
+        identity_router.service_identity,
+        "resolve_service_did_document",
+        fake_resolve_service_did_document,
+    )
+
+    response = client.get("/v1/identity/services/payservice.com/did")
+
+    assert response.status_code == 200
+    assert response.json()["did"] == "did:web:payservice.com"
+
+
+def test_post_identity_services_activate_returns_payload(
+    client,
+    api_key_headers,
+    monkeypatch,
+):
+    """POST /v1/identity/services/{domain}/activate should return the activation payload."""
+
+    async def fake_activate_service_identity(db, domain, redis=None, force_refresh=False):
+        return {
+            "domain": domain,
+            "did": f"did:web:{domain}",
+            "identity_status": "active",
+            "attestation_score": 1.0,
+            "trust_score": 62.5,
+            "verified_at": "2026-04-13T12:00:00Z",
+        }
+
+    monkeypatch.setattr(
+        identity_router.service_identity,
+        "activate_service_identity",
+        fake_activate_service_identity,
+    )
+
+    response = client.post(
+        "/v1/identity/services/payservice.com/activate",
+        headers=api_key_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["identity_status"] == "active"

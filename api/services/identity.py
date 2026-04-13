@@ -68,7 +68,7 @@ async def _store_proof_nonce(redis, did_value: str, nonce: str) -> None:
         return
     if stored is False:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="proof nonce has already been used",
         )
 
@@ -106,7 +106,7 @@ async def register_agent(
     )
     if age_seconds > settings.proof_nonce_ttl_seconds:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="proof timestamp is outside the allowed replay window",
         )
 
@@ -118,13 +118,13 @@ async def register_agent(
         derived_did = did.did_key_from_public_jwk(public_jwk)
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(exc),
         ) from exc
 
     if derived_did != request.did:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="submitted DID does not match the DID document public key",
         )
 
@@ -134,7 +134,7 @@ async def register_agent(
         public_jwk=public_jwk,
     ):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="invalid proof signature",
         )
 

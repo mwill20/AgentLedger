@@ -22,4 +22,8 @@ CRAWL_SCHEDULE = {
         "task": "crawler.expire_identity_records",
         "schedule": 60,  # every minute
     },
+    "revalidate-service-identity": {
+        "task": "crawler.revalidate_service_identity",
+        "schedule": 60 * 60 * 24,  # every 24 hours
+    },
 }

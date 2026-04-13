@@ -26,8 +26,10 @@ from api.models.identity import (
     SessionRedeemResponse,
     SessionRequest,
     SessionStatusResponse,
+    ServiceDidResolutionResponse,
+    ServiceIdentityActivationResponse,
 )
-from api.services import identity, sessions
+from api.services import identity, service_identity, sessions
 
 router = APIRouter()
 
@@ -148,4 +150,39 @@ async def redeem_session_assertion(
     return await sessions.redeem_session(
         db=db,
         request=payload,
+    )
+
+
+@router.get(
+    "/identity/services/{domain}/did",
+    response_model=ServiceDidResolutionResponse,
+)
+async def get_service_did_document(
+    domain: str,
+    redis=Depends(get_redis),
+) -> ServiceDidResolutionResponse:
+    """Resolve the did:web document for one service domain."""
+    return await service_identity.resolve_service_did_document(
+        domain=domain,
+        redis=redis,
+    )
+
+
+@router.post(
+    "/identity/services/{domain}/activate",
+    response_model=ServiceIdentityActivationResponse,
+    dependencies=[Depends(require_api_key)],
+)
+async def activate_service_did(
+    domain: str,
+    force_refresh: bool = False,
+    db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
+) -> ServiceIdentityActivationResponse:
+    """Validate and activate one service's did:web identity."""
+    return await service_identity.activate_service_identity(
+        db=db,
+        domain=domain,
+        redis=redis,
+        force_refresh=force_refresh,
     )

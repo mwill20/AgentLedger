@@ -81,6 +81,20 @@ class OperationsManifest(BaseModel):
     sandbox_url: HttpUrl | None = None
 
 
+class ManifestIdentity(BaseModel):
+    """Optional service identity binding block."""
+
+    did: str = Field(min_length=8, max_length=500)
+    verification_method: str = Field(min_length=8, max_length=500)
+
+
+class ManifestSignature(BaseModel):
+    """Optional detached signature block for the manifest."""
+
+    alg: Literal["EdDSA"]
+    value: str = Field(min_length=16, max_length=4096)
+
+
 class ServiceManifest(BaseModel):
     """Top-level manifest payload."""
 
@@ -94,6 +108,8 @@ class ServiceManifest(BaseModel):
     context: ContextManifest
     operations: OperationsManifest
     legal_entity: str | None = Field(default=None, max_length=200)
+    identity: ManifestIdentity | None = None
+    signature: ManifestSignature | None = None
     last_updated: datetime
 
     @model_validator(mode="before")
@@ -133,3 +149,17 @@ class ServiceManifest(BaseModel):
             )
 
         return value
+
+    @model_validator(mode="after")
+    def validate_optional_identity_blocks(self) -> "ServiceManifest":
+        """Require all manifest identity fields together when any are present."""
+        has_identity = self.identity is not None
+        has_signature = self.signature is not None
+        has_public_key = self.public_key is not None
+
+        if has_identity or has_signature:
+            if not (has_identity and has_signature and has_public_key):
+                raise ValueError(
+                    "identity, signature, and public_key must all be provided together"
+                )
+        return self

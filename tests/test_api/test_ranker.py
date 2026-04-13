@@ -1,9 +1,11 @@
 """Unit tests for api.services.ranker — pure scoring functions."""
 
 from api.services.ranker import (
+    compute_attestation_score,
     compute_cost_score,
     compute_latency_score,
     compute_rank_score,
+    compute_reputation_score,
     compute_reliability_score,
     compute_trust_score,
     normalize_trust_score,
@@ -68,6 +70,22 @@ class TestComputeReliabilityScore:
 
     def test_negative_clamped(self):
         assert compute_reliability_score(-1.0) == 0.0
+
+
+class TestComputeAttestationScore:
+    def test_active_identity_returns_one(self):
+        assert compute_attestation_score(True) == 1.0
+
+    def test_inactive_identity_returns_zero(self):
+        assert compute_attestation_score(False) == 0.0
+
+
+class TestComputeReputationScore:
+    def test_zero_total_returns_zero(self):
+        assert compute_reputation_score(0, 0) == 0.0
+
+    def test_success_over_total(self):
+        assert compute_reputation_score(8, 2) == 0.8
 
 
 class TestComputeRankScore:

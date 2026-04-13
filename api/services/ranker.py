@@ -43,6 +43,22 @@ def compute_reliability_score(success_rate_30d: float | None) -> float:
     return _clamp(success_rate_30d)
 
 
+def compute_attestation_score(has_active_service_identity: bool) -> float:
+    """Return the service attestation score contribution for Layer 2."""
+    return 1.0 if has_active_service_identity else 0.0
+
+
+def compute_reputation_score(
+    successful_redemptions_30d: int,
+    failed_redemptions_30d: int,
+) -> float:
+    """Return a bounded service reputation score from redemption outcomes."""
+    total = successful_redemptions_30d + failed_redemptions_30d
+    if total <= 0:
+        return 0.0
+    return _clamp(successful_redemptions_30d / total)
+
+
 def compute_rank_score(
     capability_match: float,
     trust_score: float,

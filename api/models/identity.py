@@ -242,3 +242,23 @@ class SessionRedeemResponse(BaseModel):
     agent_did: str
     ontology_tag: str
     authorization_ref: str | None = None
+
+
+class ServiceDidResolutionResponse(BaseModel):
+    """Resolved did:web document and cache metadata for a service."""
+
+    did: str
+    did_document: dict[str, Any]
+    cache_status: Literal["hit", "miss"]
+    validated_at: datetime
+
+
+class ServiceIdentityActivationResponse(BaseModel):
+    """Result of activating a service's did:web identity."""
+
+    domain: str
+    did: str
+    identity_status: Literal["active"]
+    attestation_score: float
+    trust_score: float
+    verified_at: datetime

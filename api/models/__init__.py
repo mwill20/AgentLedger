@@ -13,6 +13,8 @@ from api.models.identity import (
     SessionRedeemResponse,
     SessionRequest,
     SessionStatusResponse,
+    ServiceDidResolutionResponse,
+    ServiceIdentityActivationResponse,
 )
 from api.models.manifest import ServiceManifest
 from api.models.query import ManifestRegistrationResponse, SearchRequest
@@ -33,6 +35,8 @@ __all__ = [
     "SessionRedeemResponse",
     "SessionRequest",
     "SessionStatusResponse",
+    "ServiceDidResolutionResponse",
+    "ServiceIdentityActivationResponse",
     "SearchRequest",
     "ServiceDetail",
     "ServiceManifest",
