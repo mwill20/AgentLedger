@@ -47,7 +47,7 @@ All stack decisions are final for v0.1. Do not substitute without updating this 
 
 ## Repository Structure
 
-Build this exact structure. Do not add top-level directories not listed here.
+Preserve this core runtime structure and keep documentation assets under `docs/`. `spec/LAYER1_SPEC.md` is the canonical Layer 1 spec path.
 
 ```
 AgentLedger/
@@ -56,56 +56,93 @@ AgentLedger/
 │   ├── main.py                  # FastAPI app entry point
 │   ├── config.py                # Settings via pydantic-settings
 │   ├── dependencies.py          # Shared dependencies (db, cache, auth)
+│   ├── ratelimit.py             # Per-IP + per-API-key rate limiting middleware
 │   ├── routers/
 │   │   ├── __init__.py
-│   │   ├── services.py          # GET /services — structured query
-│   │   ├── search.py            # POST /search — NL semantic query
+│   │   ├── health.py            # GET /health
 │   │   ├── manifests.py         # POST /manifests — service registration
-│   │   └── health.py            # GET /health
+│   │   ├── ontology.py          # GET /ontology — capability taxonomy
+│   │   ├── search.py            # POST /search — NL semantic query
+│   │   ├── services.py          # GET /services — structured query
+│   │   └── verify.py            # POST /services/{id}/verify — DNS verification
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── manifest.py          # Pydantic models for manifest structure
-│   │   ├── service.py           # Pydantic models for service records
-│   │   └── query.py             # Pydantic models for query params/responses
+│   │   ├── query.py             # Pydantic models for query params/responses
+│   │   ├── sanitize.py          # Recursive strip/null-byte input sanitization
+│   │   └── service.py           # Pydantic models for service records
 │   └── services/
 │       ├── __init__.py
-│       ├── registry.py          # Core registry CRUD logic
-│       ├── ranker.py            # Ranking algorithm
 │       ├── embedder.py          # Embedding generation for semantic search
+│       ├── ranker.py            # Ranking algorithm
+│       ├── registry.py          # Core registry CRUD logic
+│       ├── typosquat.py         # Levenshtein-based typosquat detection
 │       └── verifier.py          # Domain verification logic
 ├── crawler/
 │   ├── __init__.py
 │   ├── worker.py                # Celery worker entry point
-│   ├── tasks/
-│   │   ├── __init__.py
-│   │   ├── crawl.py             # Vector A: standard path crawl
-│   │   ├── verify_domain.py     # Vector B: DNS TXT verification
-│   │   └── probe_capability.py  # Vector C: live capability probing
-│   └── scheduler.py             # Periodic task schedule
+│   ├── scheduler.py             # Periodic task schedule
+│   └── tasks/
+│       ├── __init__.py
+│       ├── crawl.py             # Vector A: standard path crawl
+│       ├── verify_domain.py     # Vector B: DNS TXT verification
+│       └── probe_capability.py  # Vector C: live capability probing
 ├── db/
-│   ├── migrations/              # Alembic migration files
 │   ├── schema.sql               # Initial schema (also in migrations)
-│   └── seed_ontology.py         # Seed script for capability ontology
+│   ├── seed_ontology.py         # Seed script for capability ontology
+│   └── migrations/              # Alembic migration files
 ├── ontology/
 │   └── v0.1.json                # Capability ontology (source of truth)
 ├── spec/
-│   ├── LAYER1_SPEC.md           # This file
-│   └── agent-manifest-v0.1.json # JSON Schema for manifest validation
+│   ├── LAYER1_SPEC.md           # This file (canonical spec)
+│   ├── agent-manifest-v0.1.json # JSON Schema for manifest validation
+│   └── sample-manifest-flightbookerpro.json
 ├── tests/
 │   ├── __init__.py
-│   ├── conftest.py
-│   ├── test_api/
+│   ├── conftest.py              # Unit test fixtures (TestClient, mocks)
+│   ├── test_api/                # Unit tests for API modules
+│   │   ├── test_manifests.py
 │   │   ├── test_services.py
 │   │   ├── test_search.py
-│   │   └── test_manifests.py
-│   └── test_crawler/
-│       ├── test_crawl.py
-│       └── test_verify.py
+│   │   ├── test_verify.py
+│   │   ├── test_ratelimit.py
+│   │   ├── test_sanitization.py
+│   │   ├── test_typosquat.py
+│   │   ├── test_ranker.py
+│   │   ├── test_embedder.py
+│   │   ├── test_registry_helpers.py
+│   │   └── test_crawler_helpers.py
+│   ├── test_crawler/            # Crawler task unit tests
+│   │   ├── test_crawl.py
+│   │   └── test_verify.py
+│   └── test_integration/        # Integration tests (live Docker stack)
+│       ├── conftest.py
+│       └── test_full_stack.py
+├── docs/                        # Documentation (Mintlify, research, internal)
+│   ├── mint.json
+│   ├── introduction.mdx
+│   ├── problem.mdx
+│   ├── ontology.mdx
+│   ├── roadmap.mdx
+│   ├── threat-model.mdx
+│   ├── architecture/
+│   │   ├── overview.mdx
+│   │   ├── manifest-registry.mdx
+│   │   ├── trust-ledger.mdx
+│   │   └── audit-chain.mdx
+│   ├── research/
+│   │   ├── AgentLedger_Whitepaper_v0.1.docx
+│   │   └── Trust-and-Discovery-Infrastructure-for-the-Autonomous-Agent-Web.pdf
+│   └── internal/
+│       ├── NORTHSTAR.md
+│       └── Layer1_prompt.md
 ├── .gitignore
+├── .env.example
 ├── docker-compose.yml
 ├── Dockerfile
+├── entrypoint.sh
+├── pyproject.toml
 ├── requirements.txt
-├── .env.example
 └── README.md
 ```
 

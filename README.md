@@ -37,4 +37,6 @@ Layer 1 provides three capabilities:
 
 ## Project Structure
 
-See `spec/LAYER1_SPEC.md` for the full implementation specification.
+- Runtime code lives under `api/`, `crawler/`, `db/`, `ontology/`, and `tests/`.
+- The canonical implementation spec lives at `spec/LAYER1_SPEC.md`.
+- Mintlify docs now live under `docs/`, with research assets in `docs/research/` and internal planning notes in `docs/internal/`.
