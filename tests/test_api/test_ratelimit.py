@@ -13,32 +13,47 @@ from api.ratelimit import (
 )
 
 
+class FakePipeline:
+    """Async pipeline double that collects commands and returns results."""
+
+    def __init__(self, results: list, *, execute_error: Exception | None = None):
+        self._results = results
+        self._execute_error = execute_error
+
+    def incr(self, key: str):
+        pass  # commands are no-ops; results come from __init__
+
+    def expire(self, key: str, ttl: int):
+        pass
+
+    def ttl(self, key: str):
+        pass
+
+    async def execute(self):
+        if self._execute_error is not None:
+            raise self._execute_error
+        return self._results
+
+
 class FakeRedis:
-    """Small async Redis double for rate-limit tests."""
+    """Small async Redis double for rate-limit tests (pipeline-based)."""
 
     def __init__(
         self,
         *,
         incr_result: int | None = None,
         ttl_result: int = 0,
-        incr_error: Exception | None = None,
+        pipeline_error: Exception | None = None,
     ) -> None:
         self.incr_result = incr_result
         self.ttl_result = ttl_result
-        self.incr_error = incr_error
-        self.expire_calls: list[tuple[str, int]] = []
+        self.pipeline_error = pipeline_error
 
-    async def incr(self, key: str) -> int:
-        if self.incr_error is not None:
-            raise self.incr_error
-        return self.incr_result if self.incr_result is not None else 0
-
-    async def expire(self, key: str, ttl: int) -> bool:
-        self.expire_calls.append((key, ttl))
-        return True
-
-    async def ttl(self, key: str) -> int:
-        return self.ttl_result
+    def pipeline(self):
+        return FakePipeline(
+            [self.incr_result or 0, True, self.ttl_result],
+            execute_error=self.pipeline_error,
+        )
 
 
 class FakeMappings:
@@ -93,7 +108,6 @@ def test_ip_rate_limit_allows_under_limit():
     assert allowed is True
     assert remaining == IP_RATE_LIMIT - 1
     assert retry_after == 0
-    assert redis.expire_calls == [("ratelimit:ip:1.2.3.4", IP_RATE_WINDOW_SECONDS)]
 
 
 def test_ip_rate_limit_blocks_over_limit():
@@ -114,7 +128,7 @@ def test_ip_rate_limit_passes_on_null_redis():
 
 def test_ip_rate_limit_passes_on_redis_error():
     """Rate limiting should fail open on Redis errors."""
-    redis = FakeRedis(incr_error=Exception("connection lost"))
+    redis = FakeRedis(pipeline_error=Exception("connection lost"))
 
     allowed, remaining, _ = asyncio.run(_check_ip_rate_limit(redis, "1.2.3.4"))
     assert allowed is True

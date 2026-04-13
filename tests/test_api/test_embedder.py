@@ -18,13 +18,16 @@ class TestTokenize:
         assert _tokenize("Hello World") == ["hello", "world"]
 
     def test_strips_punctuation(self):
-        assert _tokenize("Book flights!") == ["book", "flights"]
+        assert _tokenize("Book flights!") == ["book", "flight"]
 
     def test_empty(self):
         assert _tokenize("") == []
 
     def test_numbers(self):
         assert _tokenize("flight 123") == ["flight", "123"]
+
+    def test_normalizes_simple_plurals(self):
+        assert _tokenize("cities bookings flights") == ["city", "booking", "flight"]
 
 
 class TestHashEmbed:

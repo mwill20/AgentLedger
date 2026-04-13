@@ -28,7 +28,12 @@ from api.models.service import (
     ServiceSearchResponse,
     ServiceSummary,
 )
-from api.services.embedder import embed_text, semantic_similarity, serialize_embedding
+from api.services.embedder import (
+    embed_batch,
+    embed_text,
+    semantic_similarity,
+    serialize_embedding,
+)
 from api.services.typosquat import find_similar_domains
 from api.services.ranker import (
     compute_cost_score,
@@ -97,7 +102,7 @@ def ensure_ontology_tag_exists(tag: str) -> None:
     """Validate a caller-supplied ontology tag."""
     if tag not in load_ontology_index():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=422,
             detail=f"unknown ontology tag: {tag}",
         )
 
@@ -190,99 +195,123 @@ async def register_manifest(
     if invalid_tags:
         joined = ", ".join(sorted(set(invalid_tags)))
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=422,
             detail=f"unknown ontology_tag values: {joined}",
         )
 
+    manifest_hash = _manifest_hash(manifest)
+    raw_manifest_json = json.dumps(manifest.model_dump(mode="json"))
+    trust_score = _trust_score_for_manifest(manifest)
+    status_name = _status_for_manifest(manifest)
+    is_active = status_name != "pending_review"
+    typosquat_warnings: list[str] = []
+
     try:
-        domain_check = await db.execute(
-            text("SELECT id FROM services WHERE domain = :domain"),
-            {"domain": manifest.domain},
+        existing_result = await db.execute(
+            text(
+                """
+                SELECT
+                    s.id,
+                    s.domain,
+                    m.manifest_hash
+                FROM services s
+                LEFT JOIN manifests m
+                    ON m.service_id = s.id
+                   AND m.is_current = true
+                WHERE s.id = :service_id OR s.domain = :domain
+                """
+            ),
+            {"service_id": manifest.service_id, "domain": manifest.domain},
         )
-        existing_domain = domain_check.mappings().first()
+        existing_rows = existing_result.mappings().all()
+        existing_service = next(
+            (row for row in existing_rows if row["id"] == manifest.service_id),
+            None,
+        )
+        existing_domain = next(
+            (row for row in existing_rows if row["domain"] == manifest.domain),
+            None,
+        )
         if existing_domain and existing_domain["id"] != manifest.service_id:
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=422,
                 detail="domain is already registered to a different service_id",
             )
 
-        existing_service = await db.execute(
-            text("SELECT id FROM services WHERE id = :service_id"),
-            {"service_id": manifest.service_id},
-        )
-        is_update = existing_service.mappings().first() is not None
+        is_update = existing_service is not None
+        domain_changed = not is_update or existing_service["domain"] != manifest.domain
 
         # Typosquat detection — compare against all registered domains
-        all_domains_result = await db.execute(
-            text("SELECT domain FROM services WHERE id != :service_id"),
-            {"service_id": manifest.service_id},
+        if (
+            is_update
+            and not domain_changed
+            and existing_service["manifest_hash"] == manifest_hash
+        ):
+            await db.rollback()
+            return ManifestRegistrationResponse(
+                service_id=manifest.service_id,
+                trust_tier=1,
+                trust_score=trust_score,
+                status="updated",
+                capabilities_indexed=len(manifest.capabilities),
+                typosquat_warnings=[],
+            )
+
+        if domain_changed:
+            all_domains_result = await db.execute(
+                text("SELECT domain FROM services WHERE id != :service_id"),
+                {"service_id": manifest.service_id},
+            )
+            all_domains = [row["domain"] for row in all_domains_result.mappings().all()]
+            typosquat_matches = find_similar_domains(manifest.domain, all_domains)
+            typosquat_warnings = [
+                f"domain '{manifest.domain}' is similar to existing domain "
+                f"'{m['domain']}' (edit distance {m['distance']})"
+                for m in typosquat_matches
+            ]
+            if typosquat_warnings:
+                logger.warning(
+                    "Typosquat warning for %s: %s",
+                    manifest.domain,
+                    "; ".join(typosquat_warnings),
+                )
+
+        await db.execute(
+            text(
+                """
+                INSERT INTO services (
+                    id, name, domain, legal_entity, manifest_url, public_key,
+                    trust_tier, trust_score, is_active, created_at, updated_at, first_seen_at
+                )
+                VALUES (
+                    :service_id, :name, :domain, :legal_entity, :manifest_url, :public_key,
+                    :trust_tier, :trust_score, :is_active, NOW(), NOW(), NOW()
+                )
+                ON CONFLICT (id) DO UPDATE
+                SET name = EXCLUDED.name,
+                    domain = EXCLUDED.domain,
+                    legal_entity = EXCLUDED.legal_entity,
+                    manifest_url = EXCLUDED.manifest_url,
+                    public_key = EXCLUDED.public_key,
+                    trust_tier = EXCLUDED.trust_tier,
+                    trust_score = EXCLUDED.trust_score,
+                    is_active = EXCLUDED.is_active,
+                    last_crawled_at = NOW(),
+                    updated_at = NOW()
+                """
+            ),
+            {
+                "service_id": manifest.service_id,
+                "name": manifest.name,
+                "domain": manifest.domain,
+                "legal_entity": manifest.legal_entity,
+                "manifest_url": _manifest_url(manifest.domain),
+                "public_key": manifest.public_key,
+                "trust_tier": 1,
+                "trust_score": trust_score,
+                "is_active": is_active,
+            },
         )
-        all_domains = [row["domain"] for row in all_domains_result.mappings().all()]
-        typosquat_matches = find_similar_domains(manifest.domain, all_domains)
-        typosquat_warnings = [
-            f"domain '{manifest.domain}' is similar to existing domain "
-            f"'{m['domain']}' (edit distance {m['distance']})"
-            for m in typosquat_matches
-        ]
-        if typosquat_warnings:
-            logger.warning(
-                "Typosquat warning for %s: %s",
-                manifest.domain,
-                "; ".join(typosquat_warnings),
-            )
-
-        trust_score = _trust_score_for_manifest(manifest)
-        status_name = _status_for_manifest(manifest)
-        is_active = status_name != "pending_review"
-
-        service_params = {
-            "service_id": manifest.service_id,
-            "name": manifest.name,
-            "domain": manifest.domain,
-            "legal_entity": manifest.legal_entity,
-            "manifest_url": _manifest_url(manifest.domain),
-            "public_key": manifest.public_key,
-            "trust_tier": 1,
-            "trust_score": trust_score,
-            "is_active": is_active,
-        }
-
-        if is_update:
-            await db.execute(
-                text(
-                    """
-                    UPDATE services
-                    SET name = :name,
-                        domain = :domain,
-                        legal_entity = :legal_entity,
-                        manifest_url = :manifest_url,
-                        public_key = :public_key,
-                        trust_tier = :trust_tier,
-                        trust_score = :trust_score,
-                        is_active = :is_active,
-                        last_crawled_at = NOW(),
-                        updated_at = NOW()
-                    WHERE id = :service_id
-                    """
-                ),
-                service_params,
-            )
-        else:
-            await db.execute(
-                text(
-                    """
-                    INSERT INTO services (
-                        id, name, domain, legal_entity, manifest_url, public_key,
-                        trust_tier, trust_score, is_active, created_at, updated_at, first_seen_at
-                    )
-                    VALUES (
-                        :service_id, :name, :domain, :legal_entity, :manifest_url, :public_key,
-                        :trust_tier, :trust_score, :is_active, NOW(), NOW(), NOW()
-                    )
-                    """
-                ),
-                service_params,
-            )
 
         await db.execute(
             text(
@@ -312,8 +341,8 @@ async def register_manifest(
             ),
             {
                 "service_id": manifest.service_id,
-                "raw_json": json.dumps(manifest.model_dump(mode="json")),
-                "manifest_hash": _manifest_hash(manifest),
+                "raw_json": raw_manifest_json,
+                "manifest_hash": manifest_hash,
                 "manifest_version": manifest.manifest_version,
             },
         )
@@ -322,8 +351,30 @@ async def register_manifest(
             text("DELETE FROM service_capabilities WHERE service_id = :service_id"),
             {"service_id": manifest.service_id},
         )
-        for capability in manifest.capabilities:
-            embedding = serialize_embedding(embed_text(capability.description))
+        capability_rows = []
+        capability_embeddings = embed_batch(
+            [capability.description for capability in manifest.capabilities]
+        )
+        for capability, embedding_vector in zip(
+            manifest.capabilities,
+            capability_embeddings,
+            strict=True,
+        ):
+            capability_rows.append(
+                {
+                    "service_id": manifest.service_id,
+                    "ontology_tag": capability.ontology_tag,
+                    "description": capability.description,
+                    "embedding": serialize_embedding(embedding_vector),
+                    "input_schema_url": (
+                        str(capability.input_schema_url) if capability.input_schema_url else None
+                    ),
+                    "output_schema_url": (
+                        str(capability.output_schema_url) if capability.output_schema_url else None
+                    ),
+                }
+            )
+        if capability_rows:
             await db.execute(
                 text(
                     """
@@ -343,27 +394,16 @@ async def register_manifest(
                     )
                     """
                 ),
-                {
-                    "service_id": manifest.service_id,
-                    "ontology_tag": capability.ontology_tag,
-                    "description": capability.description,
-                    "embedding": embedding,
-                    "input_schema_url": (
-                        str(capability.input_schema_url) if capability.input_schema_url else None
-                    ),
-                    "output_schema_url": (
-                        str(capability.output_schema_url) if capability.output_schema_url else None
-                    ),
-                },
+                capability_rows,
             )
 
         await db.execute(
-            text("DELETE FROM service_pricing WHERE service_id = :service_id"),
-            {"service_id": manifest.service_id},
-        )
-        await db.execute(
             text(
                 """
+                WITH deleted AS (
+                    DELETE FROM service_pricing
+                    WHERE service_id = :service_id
+                )
                 INSERT INTO service_pricing (
                     service_id, pricing_model, tiers, billing_method, currency, created_at, updated_at
                 )
@@ -390,9 +430,14 @@ async def register_manifest(
             text("DELETE FROM service_context_requirements WHERE service_id = :service_id"),
             {"service_id": manifest.service_id},
         )
-        for row in _resolve_context_rows(manifest.context.required, True) + _resolve_context_rows(
-            manifest.context.optional, False
-        ):
+        context_rows = [
+            {"service_id": manifest.service_id, **row}
+            for row in (
+                _resolve_context_rows(manifest.context.required, True)
+                + _resolve_context_rows(manifest.context.optional, False)
+            )
+        ]
+        if context_rows:
             await db.execute(
                 text(
                     """
@@ -404,13 +449,8 @@ async def register_manifest(
                     )
                     """
                 ),
-                {"service_id": manifest.service_id, **row},
+                context_rows,
             )
-
-        await db.execute(
-            text("DELETE FROM service_operations WHERE service_id = :service_id"),
-            {"service_id": manifest.service_id},
-        )
         await db.execute(
             text(
                 """
@@ -427,6 +467,12 @@ async def register_manifest(
                     NOW(),
                     NOW()
                 )
+                ON CONFLICT (service_id) DO UPDATE
+                SET uptime_sla_percent = EXCLUDED.uptime_sla_percent,
+                    rate_limit_rpm = EXCLUDED.rate_limit_rpm,
+                    rate_limit_rpd = EXCLUDED.rate_limit_rpd,
+                    sandbox_url = EXCLUDED.sandbox_url,
+                    updated_at = NOW()
                 """
             ),
             {

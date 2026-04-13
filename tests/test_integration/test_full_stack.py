@@ -94,6 +94,36 @@ class TestManifestRegistration:
         for tag, has_embedding in rows:
             assert has_embedding, f"Embedding missing for {tag}"
 
+    def test_identical_manifest_update_is_idempotent(
+        self,
+        api_key_headers,
+        sample_manifest,
+        sync_conn,
+    ):
+        """Posting the same manifest twice should not create duplicate current rows."""
+        with httpx.Client() as client:
+            first = _post_manifest(client, sample_manifest, api_key_headers)
+            second = _post_manifest(client, sample_manifest, api_key_headers)
+
+        assert first.status_code == 201
+        assert second.status_code == 201
+        assert second.json()["status"] == "updated"
+
+        with sync_conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM manifests WHERE service_id = %s",
+                (sample_manifest["service_id"],),
+            )
+            manifest_versions = cur.fetchone()[0]
+            cur.execute(
+                "SELECT COUNT(*) FROM manifests WHERE service_id = %s AND is_current = true",
+                (sample_manifest["service_id"],),
+            )
+            current_rows = cur.fetchone()[0]
+
+        assert manifest_versions == 1
+        assert current_rows == 1
+
     def test_duplicate_ontology_tags_rejected(self, api_key_headers, sample_manifest):
         """Manifest with duplicate ontology tags should return 422."""
         payload = sample_manifest.copy()
@@ -412,7 +442,7 @@ class TestCrawlFailureDeactivation:
         sync_conn.rollback()
         with sync_conn.cursor() as cur:
             cur.execute(
-                "SELECT event_type FROM crawl_events WHERE service_id = %s",
+                "SELECT event_type FROM crawl_events WHERE service_id = %s ORDER BY created_at ASC",
                 (sample_manifest["service_id"],),
             )
             events = cur.fetchall()

@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     api_keys: str = ""  # comma-separated; set via API_KEYS env var
+    ip_rate_limit: int = 100
+    ip_rate_window_seconds: int = 60
+
+    # Embeddings: "model" = sentence-transformers (GPU/prod), "hash" = fast fallback (CPU/CI/load-test)
+    embedding_mode: str = "model"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

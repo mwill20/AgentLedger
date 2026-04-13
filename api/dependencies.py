@@ -16,7 +16,12 @@ except ImportError:  # pragma: no cover - optional in local test environments
 
 # Async SQLAlchemy engine and session factory
 try:
-    engine = create_async_engine(settings.database_url, echo=False)
+    engine = create_async_engine(
+        settings.database_url,
+        echo=False,
+        pool_size=20,
+        max_overflow=30,
+    )
     async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
 except ModuleNotFoundError:  # pragma: no cover - optional in local test environments
     engine = None

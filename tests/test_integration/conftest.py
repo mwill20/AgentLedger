@@ -11,13 +11,12 @@ from __future__ import annotations
 import os
 from uuid import uuid4
 
-import httpx
 import psycopg2
 import pytest
 import redis as redis_lib
 
 # Configure for local Docker DB before importing app modules
-# Point all connections to localhost (host machine → Docker containers)
+# Point all connections to localhost (host machine -> Docker containers)
 # Must be set BEFORE any app modules are imported
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://agentledger:agentledger@localhost:5432/agentledger"
 os.environ["DATABASE_URL_SYNC"] = "postgresql://agentledger:agentledger@localhost:5432/agentledger"
@@ -26,9 +25,18 @@ os.environ.setdefault("API_KEYS", "dev-local-only")
 
 # Patch settings to use localhost URLs (for crawler tasks that use settings.database_url_sync)
 from api.config import settings as _settings  # noqa: E402
+
 _settings.database_url_sync = os.environ["DATABASE_URL_SYNC"]
 _settings.database_url = os.environ["DATABASE_URL"]
 _settings.redis_url = os.environ["REDIS_URL"]
+
+SYNTHETIC_SERVICE_NAME_PATTERNS = [
+    "IntegrationTest-%",
+    "LoadTest-%",
+    "PerfTest-%",
+    "Probe %",
+    "Warm %",
+]
 
 
 def _db_available() -> bool:
@@ -45,6 +53,44 @@ requires_db = pytest.mark.skipif(
     not _db_available(),
     reason="PostgreSQL not available (run: docker compose up -d db redis)",
 )
+
+
+def _purge_synthetic_rows(conn) -> None:
+    """Remove synthetic integration/load rows that can pollute assertions."""
+    conn.rollback()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                CREATE TEMP TABLE synthetic_service_ids ON COMMIT DROP AS
+                SELECT id
+                FROM services
+                WHERE name LIKE ANY(%s)
+                """,
+                (SYNTHETIC_SERVICE_NAME_PATTERNS,),
+            )
+            cur.execute(
+                "DELETE FROM crawl_events WHERE service_id IN (SELECT id FROM synthetic_service_ids)"
+            )
+            cur.execute(
+                "DELETE FROM service_capabilities WHERE service_id IN (SELECT id FROM synthetic_service_ids)"
+            )
+            cur.execute(
+                "DELETE FROM service_pricing WHERE service_id IN (SELECT id FROM synthetic_service_ids)"
+            )
+            cur.execute(
+                "DELETE FROM service_context_requirements WHERE service_id IN (SELECT id FROM synthetic_service_ids)"
+            )
+            cur.execute(
+                "DELETE FROM service_operations WHERE service_id IN (SELECT id FROM synthetic_service_ids)"
+            )
+            cur.execute(
+                "DELETE FROM manifests WHERE service_id IN (SELECT id FROM synthetic_service_ids)"
+            )
+            cur.execute("DELETE FROM services WHERE id IN (SELECT id FROM synthetic_service_ids)")
+        conn.commit()
+    except Exception:
+        conn.rollback()
 
 
 @pytest.fixture(scope="session")
@@ -111,20 +157,7 @@ def flush_query_cache():
 
 @pytest.fixture(autouse=True)
 def cleanup_test_data(sync_conn, unique_id):
-    """Clean up any data created during the test."""
+    """Clean up synthetic rows before and after each integration test."""
+    _purge_synthetic_rows(sync_conn)
     yield
-    # Reset any failed transaction state before cleanup
-    sync_conn.rollback()
-    try:
-        with sync_conn.cursor() as cur:
-            # Clean up in dependency order (crawl_events FK → services)
-            cur.execute("DELETE FROM crawl_events WHERE service_id IN (SELECT id FROM services WHERE name LIKE 'IntegrationTest-%%')")
-            cur.execute("DELETE FROM service_capabilities WHERE service_id IN (SELECT id FROM services WHERE name LIKE 'IntegrationTest-%%')")
-            cur.execute("DELETE FROM service_pricing WHERE service_id IN (SELECT id FROM services WHERE name LIKE 'IntegrationTest-%%')")
-            cur.execute("DELETE FROM service_context_requirements WHERE service_id IN (SELECT id FROM services WHERE name LIKE 'IntegrationTest-%%')")
-            cur.execute("DELETE FROM service_operations WHERE service_id IN (SELECT id FROM services WHERE name LIKE 'IntegrationTest-%%')")
-            cur.execute("DELETE FROM manifests WHERE service_id IN (SELECT id FROM services WHERE name LIKE 'IntegrationTest-%%')")
-            cur.execute("DELETE FROM services WHERE name LIKE 'IntegrationTest-%%'")
-        sync_conn.commit()
-    except Exception:
-        sync_conn.rollback()
+    _purge_synthetic_rows(sync_conn)

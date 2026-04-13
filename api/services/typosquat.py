@@ -74,6 +74,7 @@ def find_similar_domains(
     candidate_domain: str,
     existing_domains: list[str],
     max_distance: int = TYPOSQUAT_MAX_DISTANCE,
+    max_matches: int = 5,
 ) -> list[dict[str, str | int]]:
     """Find existing domains within edit distance of the candidate.
 
@@ -81,6 +82,7 @@ def find_similar_domains(
         candidate_domain: The domain being registered.
         existing_domains: All currently registered domains.
         max_distance: Maximum Levenshtein distance to flag.
+        max_matches: Maximum number of closest matches to return.
 
     Returns:
         List of dicts with 'domain' and 'distance' for each match.
@@ -107,4 +109,5 @@ def find_similar_domains(
                 "distance": distance,
             })
 
-    return matches
+    matches.sort(key=lambda item: (int(item["distance"]), str(item["domain"])))
+    return matches[:max_matches]

@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+from hashlib import sha256
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -24,12 +25,32 @@ _model_load_attempted = False
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
 
+def _normalize_token(token: str) -> str:
+    """Collapse simple inflections so hash mode keeps obvious token overlap."""
+    if token.endswith("ies") and len(token) > 4:
+        return token[:-3] + "y"
+    if token.endswith("s") and len(token) > 3 and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
 def _get_model() -> SentenceTransformer | None:
-    """Lazy-load the sentence-transformers model (once)."""
+    """Lazy-load the sentence-transformers model (once).
+
+    Skips model loading when ``EMBEDDING_MODE=hash`` to enable fast
+    CPU-only deployments and load testing without GPU.
+    """
     global _model, _model_load_attempted
     if _model_load_attempted:
         return _model
     _model_load_attempted = True
+
+    from api.config import settings
+
+    if settings.embedding_mode == "hash":
+        logger.info("EMBEDDING_MODE=hash — using deterministic hash-based embedder")
+        return _model  # remains None → falls through to _hash_embed
+
     try:
         from sentence_transformers import SentenceTransformer
 
@@ -50,7 +71,7 @@ def _get_model() -> SentenceTransformer | None:
 
 def _tokenize(text: str) -> list[str]:
     """Normalize free text into lowercase tokens."""
-    return _TOKEN_RE.findall(text.lower())
+    return [_normalize_token(token) for token in _TOKEN_RE.findall(text.lower())]
 
 
 def _hash_embed(text: str, dimension: int = EMBEDDING_DIMENSION) -> list[float]:
@@ -61,7 +82,11 @@ def _hash_embed(text: str, dimension: int = EMBEDDING_DIMENSION) -> list[float]:
         return vector
 
     for token in tokens:
-        vector[hash(token) % dimension] += 1.0
+        # Python's built-in hash() is process-randomized, which breaks
+        # cross-worker consistency. Use a stable hash for deterministic
+        # embeddings in hash mode and tests.
+        token_hash = int.from_bytes(sha256(token.encode("utf-8")).digest()[:8], "big")
+        vector[token_hash % dimension] += 1.0
 
     magnitude = math.sqrt(sum(v * v for v in vector))
     if magnitude == 0:

@@ -3,16 +3,17 @@
 Two layers:
 1. Per-IP: 100 requests/minute via Redis sliding window
 2. Per-API-key: monthly quota enforcement via api_keys table
+
+Uses a pure ASGI middleware instead of Starlette's BaseHTTPMiddleware to
+avoid the per-request thread overhead that degrades throughput under high
+concurrency.
 """
 
 from __future__ import annotations
 
-import time
+import json
 from hashlib import sha256
-
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import JSONResponse
+from typing import Any
 
 from api.config import settings
 
@@ -20,8 +21,8 @@ from api.config import settings
 # Constants
 # ---------------------------------------------------------------------------
 
-IP_RATE_LIMIT = 100  # requests per window
-IP_RATE_WINDOW_SECONDS = 60  # 1-minute sliding window
+IP_RATE_LIMIT = settings.ip_rate_limit
+IP_RATE_WINDOW_SECONDS = settings.ip_rate_window_seconds
 EXEMPT_PATHS = {"/v1/health", "/docs", "/openapi.json", "/redoc"}
 
 
@@ -29,23 +30,25 @@ EXEMPT_PATHS = {"/v1/health", "/docs", "/openapi.json", "/redoc"}
 # Per-IP rate limiting (Redis-backed)
 # ---------------------------------------------------------------------------
 
-async def _check_ip_rate_limit(redis, client_ip: str) -> tuple[bool, int, int]:
-    """Check per-IP rate limit using Redis INCR + EXPIRE.
+async def _check_ip_rate_limit(redis_client: Any, client_ip: str) -> tuple[bool, int, int]:
+    """Check per-IP rate limit using a Redis pipeline (single round-trip).
 
     Returns (allowed, remaining, retry_after_seconds).
     """
-    if redis is None or hasattr(redis, "__class__") and redis.__class__.__name__ == "NullRedisClient":
+    if redis_client is None or redis_client.__class__.__name__ == "NullRedisClient":
         return True, IP_RATE_LIMIT, 0
+    if IP_RATE_LIMIT <= 0:
+        return True, 0, 0
 
     key = f"ratelimit:ip:{client_ip}"
     try:
-        current = await redis.incr(key)
-        if current == 1:
-            await redis.expire(key, IP_RATE_WINDOW_SECONDS)
+        pipe = redis_client.pipeline()
+        pipe.incr(key)
+        pipe.expire(key, IP_RATE_WINDOW_SECONDS)
+        pipe.ttl(key)
+        current, _expire_ok, ttl = await pipe.execute()
 
-        ttl = await redis.ttl(key)
         remaining = max(0, IP_RATE_LIMIT - current)
-
         if current > IP_RATE_LIMIT:
             return False, 0, max(1, ttl)
         return True, remaining, 0
@@ -58,7 +61,7 @@ async def _check_ip_rate_limit(redis, client_ip: str) -> tuple[bool, int, int]:
 # Per-API-key quota enforcement (DB-backed)
 # ---------------------------------------------------------------------------
 
-async def _check_api_key_quota(session_factory, api_key: str) -> tuple[bool, int | None]:
+async def _check_api_key_quota(session_factory: Any, api_key: str) -> tuple[bool, int | None]:
     """Check and increment the api_keys query_count.
 
     Returns (allowed, retry_after_seconds).
@@ -127,40 +130,93 @@ async def _check_api_key_quota(session_factory, api_key: str) -> tuple[bool, int
 
 
 # ---------------------------------------------------------------------------
-# Middleware
+# Pure ASGI Middleware (replaces BaseHTTPMiddleware for performance)
 # ---------------------------------------------------------------------------
 
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    """Combined per-IP and per-API-key rate limiting."""
+def _parse_scope_path(scope: dict) -> str:
+    """Extract the URL path from an ASGI scope."""
+    return scope.get("path", "/")
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+
+def _get_client_ip(scope: dict) -> str:
+    """Extract client IP from an ASGI scope."""
+    client = scope.get("client")
+    return client[0] if client else "unknown"
+
+
+def _get_header(scope: dict, name: bytes) -> str | None:
+    """Extract a single header value from ASGI scope headers."""
+    for key, value in scope.get("headers", []):
+        if key == name:
+            return value.decode("latin-1")
+    return None
+
+
+async def _send_json_response(
+    send,
+    status_code: int,
+    body: dict,
+    extra_headers: dict[str, str] | None = None,
+) -> None:
+    """Send a complete JSON response via the ASGI send callable."""
+    payload = json.dumps(body).encode("utf-8")
+    headers = [
+        (b"content-type", b"application/json"),
+        (b"content-length", str(len(payload)).encode()),
+    ]
+    if extra_headers:
+        for k, v in extra_headers.items():
+            headers.append((k.encode(), v.encode()))
+    await send({"type": "http.response.start", "status": status_code, "headers": headers})
+    await send({"type": "http.response.body", "body": payload})
+
+
+class RateLimitMiddleware:
+    """Pure ASGI rate-limiting middleware.
+
+    Unlike Starlette's ``BaseHTTPMiddleware``, this does **not** spawn a
+    background thread per request and does not buffer the response body,
+    which eliminates a major source of thread contention under load.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = _parse_scope_path(scope)
+
         # Skip rate limiting for exempt paths
-        if request.url.path in EXEMPT_PATHS:
-            return await call_next(request)
+        if path in EXEMPT_PATHS:
+            await self.app(scope, receive, send)
+            return
 
         # --- Per-IP check ---
         from api.dependencies import redis_client
 
-        client_ip = request.client.host if request.client else "unknown"
+        client_ip = _get_client_ip(scope)
         ip_allowed, ip_remaining, ip_retry_after = await _check_ip_rate_limit(
             redis_client, client_ip
         )
 
         if not ip_allowed:
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "IP rate limit exceeded"},
-                headers={
+            await _send_json_response(
+                send,
+                429,
+                {"detail": "IP rate limit exceeded"},
+                {
                     "Retry-After": str(ip_retry_after),
                     "X-RateLimit-Limit": str(IP_RATE_LIMIT),
                     "X-RateLimit-Remaining": "0",
                 },
             )
+            return
 
         # --- Per-API-key quota check ---
-        api_key = request.headers.get("X-API-Key")
+        api_key = _get_header(scope, b"x-api-key")
         if api_key:
             from api.dependencies import async_session_factory
 
@@ -169,18 +225,24 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
 
             if not key_allowed:
-                return JSONResponse(
-                    status_code=429,
-                    content={"detail": "API key quota exhausted"},
-                    headers={
-                        "Retry-After": str(key_retry_after or 86400),
-                    },
+                await _send_json_response(
+                    send,
+                    429,
+                    {"detail": "API key quota exhausted"},
+                    {"Retry-After": str(key_retry_after or 86400)},
                 )
+                return
 
-        # --- Proceed ---
-        response = await call_next(request)
+        # --- Proceed: inject rate-limit headers into response ---
+        rl_limit = str(IP_RATE_LIMIT)
+        rl_remaining = str(ip_remaining)
 
-        # Add rate limit headers to successful responses
-        response.headers["X-RateLimit-Limit"] = str(IP_RATE_LIMIT)
-        response.headers["X-RateLimit-Remaining"] = str(ip_remaining)
-        return response
+        async def send_with_headers(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-ratelimit-limit", rl_limit.encode()))
+                headers.append((b"x-ratelimit-remaining", rl_remaining.encode()))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
