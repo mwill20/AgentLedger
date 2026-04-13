@@ -16,8 +16,17 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     api_keys: str = ""  # comma-separated; set via API_KEYS env var
+    admin_api_keys: str = ""  # comma-separated admin keys for identity revocation
     ip_rate_limit: int = 100
     ip_rate_window_seconds: int = 60
+
+    # Identity / Layer 2
+    issuer_did: str = "did:web:agentledger.io"
+    issuer_private_jwk: str = ""
+    credential_ttl_seconds: int = 31536000
+    proof_nonce_ttl_seconds: int = 60
+    revocation_cache_ttl_seconds: int = 300
+    did_web_cache_ttl_seconds: int = 600
 
     # Embeddings: "model" = sentence-transformers (GPU/prod), "hash" = fast fallback (CPU/CI/load-test)
     embedding_mode: str = "model"

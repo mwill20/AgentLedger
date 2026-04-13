@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 # Ensure test API key is configured before importing app
 os.environ.setdefault("API_KEYS", "test-api-key")
+os.environ.setdefault("ADMIN_API_KEYS", "test-admin-key")
 
 from api.dependencies import get_db  # noqa: E402
 from api.main import app  # noqa: E402
@@ -24,6 +25,12 @@ class DummySession:
 def api_key_headers() -> dict[str, str]:
     """Default auth header for protected endpoints."""
     return {"X-API-Key": "test-api-key"}
+
+
+@pytest.fixture
+def admin_api_key_headers() -> dict[str, str]:
+    """Admin auth header for revocation endpoints."""
+    return {"X-API-Key": "test-admin-key"}
 
 
 @pytest.fixture

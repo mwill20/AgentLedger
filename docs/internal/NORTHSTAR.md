@@ -43,13 +43,18 @@ AgentLedger is not a product. It is a stack. Each layer depends on the one below
 │  LAYER 3: TRUST & VERIFICATION              │
 │  Blockchain-anchored attestation ledger      │
 ├──────────────────────────────────────────────┤
-│  LAYER 2: IDENTITY & ATTESTATION            │
+│  LAYER 2: IDENTITY & ATTESTATION            │  ← In Design
 │  Agent identity, credential issuance        │
 ├──────────────────────────────────────────────┤
-│  LAYER 1: DISCOVERY & DISTRIBUTION          │  ← Building now
+│  LAYER 1: DISCOVERY & DISTRIBUTION          │  ← Complete
 │  Manifest Registry, Capability Ontology     │
 └──────────────────────────────────────────────┘
 ```
+
+## Current Build Status
+
+- Layer 1: Complete. The Manifest Registry is built, tested, and locally verified against the Layer 1 acceptance gates.
+- Layer 2: In Design. The identity and attestation architecture is locked in `spec/LAYER2_SPEC.md` on branch `layer2/identity-attestation`.
 
 ---
 
@@ -193,11 +198,13 @@ The NorthStar competitive moat is not technical. It is **standard adoption** + *
 ## Milestones on the Path to NorthStar
 
 ### 2026 — Foundation
-- [ ] Layer 1 built and deployed (Manifest Registry live)
+- [x] Layer 1 built and locally verified (Manifest Registry complete)
+- [ ] Layer 1 deployed publicly (Manifest Registry live)
 - [ ] 1,000 capability-probed services registered across 5 domains
 - [ ] AgentLedger Capability Ontology v1.0 published as open standard
 - [ ] First agent platform integrates AgentLedger discovery natively
-- [ ] Layer 2 spec complete, build begins
+- [x] Layer 2 spec complete
+- [ ] Layer 2 build begins (status: In Design)
 - [ ] EU AI Act enforcement (August 2026) — AgentLedger Audit Chain positioned as compliance solution
 
 ### 2027 — Trust Infrastructure

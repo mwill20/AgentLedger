@@ -60,6 +60,11 @@ def _configured_api_keys() -> set[str]:
     return {key.strip() for key in settings.api_keys.split(",") if key.strip()}
 
 
+def _configured_admin_api_keys() -> set[str]:
+    """Parse configured admin API keys from settings."""
+    return {key.strip() for key in settings.admin_api_keys.split(",") if key.strip()}
+
+
 async def require_api_key(
     x_api_key: str | None = Header(default=None, alias="X-API-Key"),
 ) -> str:
@@ -94,4 +99,31 @@ async def require_api_key(
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="invalid API key",
+    )
+
+
+async def require_admin_api_key(
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+) -> str:
+    """Validate an admin-scoped API key.
+
+    Falls back to the normal API key gate when ADMIN_API_KEYS is unset to keep
+    local development and early Layer 2 integration simple.
+    """
+    admin_keys = _configured_admin_api_keys()
+    if not admin_keys:
+        return await require_api_key(x_api_key=x_api_key)
+
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="missing X-API-Key header",
+        )
+
+    if x_api_key in admin_keys:
+        return x_api_key
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="invalid admin API key",
     )

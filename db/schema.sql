@@ -129,6 +129,36 @@ CREATE TABLE api_keys (
     last_used_at TIMESTAMPTZ
 );
 
+-- Layer 2: agent identities
+CREATE TABLE agent_identities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    did TEXT UNIQUE NOT NULL,
+    agent_name TEXT NOT NULL,
+    issuing_platform TEXT,
+    public_key_jwk JSONB NOT NULL,
+    capability_scope TEXT[] NOT NULL DEFAULT '{}',
+    risk_tier TEXT NOT NULL DEFAULT 'standard',
+    credential_hash TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    is_revoked BOOLEAN NOT NULL DEFAULT false,
+    revoked_at TIMESTAMPTZ,
+    revocation_reason TEXT,
+    registered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_seen_at TIMESTAMPTZ,
+    credential_expires_at TIMESTAMPTZ
+);
+
+-- Layer 2: revocation event log
+CREATE TABLE revocation_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    target_type TEXT NOT NULL,
+    target_id TEXT NOT NULL,
+    reason_code TEXT NOT NULL,
+    revoked_by TEXT NOT NULL,
+    evidence JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX services_trust_tier ON services(trust_tier);
 CREATE INDEX services_trust_score ON services(trust_score DESC);
@@ -137,3 +167,6 @@ CREATE INDEX service_capabilities_tag ON service_capabilities(ontology_tag);
 CREATE INDEX service_capabilities_embedding ON service_capabilities
     USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 CREATE INDEX crawl_events_service ON crawl_events(service_id, created_at DESC);
+CREATE INDEX agent_identities_platform ON agent_identities(issuing_platform);
+CREATE INDEX agent_identities_risk_tier ON agent_identities(risk_tier);
+CREATE INDEX revocation_events_target ON revocation_events(target_type, target_id, created_at DESC);

@@ -6,7 +6,7 @@ from fastapi import FastAPI
 
 from api.dependencies import engine, redis_client
 from api.ratelimit import RateLimitMiddleware
-from api.routers import health, manifests, ontology, search, services, verify
+from api.routers import health, identity, manifests, ontology, search, services, verify
 
 
 @asynccontextmanager
@@ -37,3 +37,4 @@ app.include_router(manifests.router, prefix="/v1", tags=["manifests"])
 app.include_router(services.router, prefix="/v1", tags=["services"])
 app.include_router(search.router, prefix="/v1", tags=["search"])
 app.include_router(verify.router, prefix="/v1", tags=["verification"])
+app.include_router(identity.router, prefix="/v1", tags=["identity"])
