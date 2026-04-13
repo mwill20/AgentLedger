@@ -1,7 +1,6 @@
 """Unit tests for pure helper functions in api.services.registry."""
 
 import asyncio
-from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import HTTPException
@@ -21,6 +20,33 @@ from api.services.registry import (
     load_ontology_payload,
 )
 from api.models.manifest import ContextField, ServiceManifest
+
+
+class FakeCacheRedis:
+    """Small async Redis double for cache helper tests."""
+
+    def __init__(
+        self,
+        *,
+        get_value: str | None = None,
+        get_error: Exception | None = None,
+        set_error: Exception | None = None,
+    ) -> None:
+        self.get_value = get_value
+        self.get_error = get_error
+        self.set_error = set_error
+        self.set_calls: list[tuple[str, str, int | None]] = []
+
+    async def get(self, key: str) -> str | None:
+        if self.get_error is not None:
+            raise self.get_error
+        return self.get_value
+
+    async def set(self, key: str, value: str, ex: int | None = None) -> bool:
+        if self.set_error is not None:
+            raise self.set_error
+        self.set_calls.append((key, value, ex))
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -178,31 +204,27 @@ class TestServiceSummaryFromRow:
 
 class TestCacheHelpers:
     def test_cache_get_returns_value(self):
-        redis = AsyncMock()
-        redis.get.return_value = '{"result": "cached"}'
+        redis = FakeCacheRedis(get_value='{"result": "cached"}')
         result = asyncio.run(_cache_get(redis, "test:key"))
         assert result == '{"result": "cached"}'
 
     def test_cache_get_returns_none_on_miss(self):
-        redis = AsyncMock()
-        redis.get.return_value = None
+        redis = FakeCacheRedis(get_value=None)
         result = asyncio.run(_cache_get(redis, "test:missing"))
         assert result is None
 
     def test_cache_get_returns_none_on_error(self):
-        redis = AsyncMock()
-        redis.get.side_effect = Exception("connection lost")
+        redis = FakeCacheRedis(get_error=Exception("connection lost"))
         result = asyncio.run(_cache_get(redis, "test:key"))
         assert result is None
 
     def test_cache_set_writes(self):
-        redis = AsyncMock()
+        redis = FakeCacheRedis()
         asyncio.run(_cache_set(redis, "test:key", "value"))
-        redis.set.assert_called_once()
+        assert redis.set_calls == [("test:key", "value", 60)]
 
     def test_cache_set_ignores_error(self):
-        redis = AsyncMock()
-        redis.set.side_effect = Exception("connection lost")
+        redis = FakeCacheRedis(set_error=Exception("connection lost"))
         # Should not raise
         asyncio.run(_cache_set(redis, "test:key", "value"))
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -102,8 +102,13 @@ def test_manifest_name_stripped_before_validation(client, api_key_headers, sampl
         capabilities_indexed=1,
     )
 
-    with patch("api.services.registry.register_manifest", new_callable=AsyncMock) as mock_register:
-        mock_register.return_value = mock_response
+    captured_args = {}
+
+    async def _mock_register(*args, **kwargs):
+        captured_args.update(kwargs)
+        return mock_response
+
+    with patch("api.services.registry.register_manifest", new=_mock_register):
         response = client.post("/v1/manifests", json=payload, headers=api_key_headers)
 
     # Should succeed — name is valid after strip
@@ -159,13 +164,21 @@ def test_search_empty_query_after_strip_returns_400(client, api_key_headers):
 
 def test_search_query_stripped(client, api_key_headers):
     """Search query should be stripped before processing."""
-    with patch("api.services.registry.search_services", new_callable=AsyncMock) as mock_search:
-        mock_search.return_value = {
+    captured_requests = []
+
+    async def _mock_search(*args, **kwargs):
+        # Capture the request object to verify stripping
+        request_obj = kwargs.get("request") or (args[0] if args else None)
+        if request_obj is not None:
+            captured_requests.append(request_obj)
+        return {
             "total": 0,
             "limit": 10,
             "offset": 0,
             "results": [],
         }
+
+    with patch("api.services.registry.search_services", new=_mock_search):
         response = client.post(
             "/v1/search",
             json={"query": "  book a flight  "},
@@ -174,9 +187,8 @@ def test_search_query_stripped(client, api_key_headers):
 
     assert response.status_code == 200
     # Verify the query was stripped before being passed to registry
-    call_kwargs = mock_search.call_args
-    request_arg = call_kwargs.kwargs.get("request") or call_kwargs.args[0]
-    assert request_arg.query == "book a flight"
+    assert len(captured_requests) == 1
+    assert captured_requests[0].query == "book a flight"
 
 
 def test_search_query_too_long_returns_422(client, api_key_headers):

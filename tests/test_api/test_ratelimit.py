@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from hashlib import sha256
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from api.ratelimit import (
     IP_RATE_LIMIT,
@@ -14,28 +13,92 @@ from api.ratelimit import (
 )
 
 
+class FakeRedis:
+    """Small async Redis double for rate-limit tests."""
+
+    def __init__(
+        self,
+        *,
+        incr_result: int | None = None,
+        ttl_result: int = 0,
+        incr_error: Exception | None = None,
+    ) -> None:
+        self.incr_result = incr_result
+        self.ttl_result = ttl_result
+        self.incr_error = incr_error
+        self.expire_calls: list[tuple[str, int]] = []
+
+    async def incr(self, key: str) -> int:
+        if self.incr_error is not None:
+            raise self.incr_error
+        return self.incr_result if self.incr_result is not None else 0
+
+    async def expire(self, key: str, ttl: int) -> bool:
+        self.expire_calls.append((key, ttl))
+        return True
+
+    async def ttl(self, key: str) -> int:
+        return self.ttl_result
+
+
+class FakeMappings:
+    """Minimal SQLAlchemy-style mappings wrapper."""
+
+    def __init__(self, row):
+        self.row = row
+
+    def first(self):
+        return self.row
+
+
+class FakeResult:
+    """Minimal SQLAlchemy-style result wrapper."""
+
+    def __init__(self, row):
+        self.row = row
+
+    def mappings(self):
+        return FakeMappings(self.row)
+
+
+class FakeSession:
+    """Async DB session double with queued execute results."""
+
+    def __init__(self, rows: list[dict | None] | None = None, *, execute_error: Exception | None = None):
+        self.rows = list(rows or [])
+        self.execute_error = execute_error
+        self.execute_calls: list[tuple[tuple, dict]] = []
+        self.committed = False
+
+    async def execute(self, *args, **kwargs):
+        if self.execute_error is not None:
+            raise self.execute_error
+        self.execute_calls.append((args, kwargs))
+        row = self.rows.pop(0) if self.rows else None
+        return FakeResult(row)
+
+    async def commit(self) -> None:
+        self.committed = True
+
+
 # ---------------------------------------------------------------------------
 # Per-IP rate limiting
 # ---------------------------------------------------------------------------
 
 def test_ip_rate_limit_allows_under_limit():
     """Requests under the limit should be allowed."""
-    redis = AsyncMock()
-    redis.incr.return_value = 1
-    redis.expire.return_value = True
-    redis.ttl.return_value = 60
+    redis = FakeRedis(incr_result=1, ttl_result=60)
 
     allowed, remaining, retry_after = asyncio.run(_check_ip_rate_limit(redis, "1.2.3.4"))
     assert allowed is True
     assert remaining == IP_RATE_LIMIT - 1
     assert retry_after == 0
+    assert redis.expire_calls == [("ratelimit:ip:1.2.3.4", IP_RATE_WINDOW_SECONDS)]
 
 
 def test_ip_rate_limit_blocks_over_limit():
     """Requests over the limit should be blocked."""
-    redis = AsyncMock()
-    redis.incr.return_value = IP_RATE_LIMIT + 1
-    redis.ttl.return_value = 45
+    redis = FakeRedis(incr_result=IP_RATE_LIMIT + 1, ttl_result=45)
 
     allowed, remaining, retry_after = asyncio.run(_check_ip_rate_limit(redis, "1.2.3.4"))
     assert allowed is False
@@ -51,8 +114,7 @@ def test_ip_rate_limit_passes_on_null_redis():
 
 def test_ip_rate_limit_passes_on_redis_error():
     """Rate limiting should fail open on Redis errors."""
-    redis = AsyncMock()
-    redis.incr.side_effect = Exception("connection lost")
+    redis = FakeRedis(incr_error=Exception("connection lost"))
 
     allowed, remaining, _ = asyncio.run(_check_ip_rate_limit(redis, "1.2.3.4"))
     assert allowed is True
@@ -68,10 +130,11 @@ def test_api_key_quota_allows_configured_keys():
     """Keys matching settings.api_keys should bypass DB check."""
     mock_factory = MagicMock()
     allowed, retry_after = asyncio.run(
-        _check_api_key_quota(mock_factory, "dev-local-only")
+        _check_api_key_quota(mock_factory, "test-api-key")
     )
     assert allowed is True
     assert retry_after is None
+    mock_factory.assert_not_called()
 
 
 def _make_async_session_factory(mock_session):
@@ -88,10 +151,7 @@ def _make_async_session_factory(mock_session):
 
 def test_api_key_quota_db_not_found():
     """Keys not in DB should be allowed (auth middleware handles rejection)."""
-    mock_session = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.mappings.return_value.first.return_value = None
-    mock_session.execute.return_value = mock_result
+    mock_session = FakeSession(rows=[None])
 
     factory = _make_async_session_factory(mock_session)
     allowed, retry_after = asyncio.run(
@@ -102,14 +162,15 @@ def test_api_key_quota_db_not_found():
 
 def test_api_key_quota_inactive_key():
     """Inactive DB keys should be rejected."""
-    mock_session = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.mappings.return_value.first.return_value = {
-        "query_count": 0,
-        "monthly_limit": 1000,
-        "is_active": False,
-    }
-    mock_session.execute.return_value = mock_result
+    mock_session = FakeSession(
+        rows=[
+            {
+                "query_count": 0,
+                "monthly_limit": 1000,
+                "is_active": False,
+            }
+        ]
+    )
 
     factory = _make_async_session_factory(mock_session)
     allowed, retry_after = asyncio.run(
@@ -120,14 +181,15 @@ def test_api_key_quota_inactive_key():
 
 def test_api_key_quota_exhausted():
     """Keys at their monthly limit should be rejected with retry_after."""
-    mock_session = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.mappings.return_value.first.return_value = {
-        "query_count": 1000,
-        "monthly_limit": 1000,
-        "is_active": True,
-    }
-    mock_session.execute.return_value = mock_result
+    mock_session = FakeSession(
+        rows=[
+            {
+                "query_count": 1000,
+                "monthly_limit": 1000,
+                "is_active": True,
+            }
+        ]
+    )
 
     factory = _make_async_session_factory(mock_session)
     allowed, retry_after = asyncio.run(
@@ -140,14 +202,16 @@ def test_api_key_quota_exhausted():
 
 def test_api_key_quota_under_limit_increments():
     """Keys under their limit should be allowed and count incremented."""
-    mock_session = AsyncMock()
-    mock_result = MagicMock()
-    mock_result.mappings.return_value.first.return_value = {
-        "query_count": 50,
-        "monthly_limit": 1000,
-        "is_active": True,
-    }
-    mock_session.execute.return_value = mock_result
+    mock_session = FakeSession(
+        rows=[
+            {
+                "query_count": 50,
+                "monthly_limit": 1000,
+                "is_active": True,
+            },
+            None,
+        ]
+    )
 
     factory = _make_async_session_factory(mock_session)
     allowed, retry_after = asyncio.run(
@@ -155,16 +219,17 @@ def test_api_key_quota_under_limit_increments():
     )
     assert allowed is True
     # Should have called execute twice (SELECT + UPDATE)
-    assert mock_session.execute.call_count == 2
+    assert len(mock_session.execute_calls) == 2
+    assert mock_session.committed is True
 
 
 def test_api_key_quota_db_error_fails_open():
     """DB errors during quota check should fail open."""
-    def broken_factory():
-        raise Exception("DB down")
+    broken_session = FakeSession(execute_error=Exception("DB down"))
+    factory = _make_async_session_factory(broken_session)
 
     allowed, retry_after = asyncio.run(
-        _check_api_key_quota(broken_factory, "unknown-key-not-in-config")
+        _check_api_key_quota(factory, "unknown-key-not-in-config")
     )
     assert allowed is True
 
@@ -189,7 +254,10 @@ def test_health_endpoint_exempt_from_rate_limiting(client):
 
 def test_ip_rate_limit_returns_429(client, api_key_headers):
     """Exceeding IP rate limit should return 429 with Retry-After."""
-    with patch("api.ratelimit._check_ip_rate_limit", new_callable=AsyncMock, return_value=(False, 0, 30)):
+    async def _mock_ip_blocked(*args, **kwargs):
+        return (False, 0, 30)
+
+    with patch("api.ratelimit._check_ip_rate_limit", new=_mock_ip_blocked):
         response = client.get("/v1/ontology", headers=api_key_headers)
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "30"
@@ -198,8 +266,14 @@ def test_ip_rate_limit_returns_429(client, api_key_headers):
 
 def test_api_key_quota_returns_429(client, api_key_headers):
     """Exhausted API key quota should return 429 with Retry-After."""
-    with patch("api.ratelimit._check_ip_rate_limit", new_callable=AsyncMock, return_value=(True, 99, 0)):
-        with patch("api.ratelimit._check_api_key_quota", new_callable=AsyncMock, return_value=(False, 86400)):
+    async def _mock_ip_allowed(*args, **kwargs):
+        return (True, 99, 0)
+
+    async def _mock_key_exhausted(*args, **kwargs):
+        return (False, 86400)
+
+    with patch("api.ratelimit._check_ip_rate_limit", new=_mock_ip_allowed):
+        with patch("api.ratelimit._check_api_key_quota", new=_mock_key_exhausted):
             response = client.get("/v1/ontology", headers=api_key_headers)
     assert response.status_code == 429
     assert response.headers["Retry-After"] == "86400"
