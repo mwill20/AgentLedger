@@ -3,11 +3,12 @@
 from collections.abc import AsyncGenerator
 from hashlib import sha256
 
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from api.config import settings
+from api.services import identity as identity_service
 
 try:
     import redis.asyncio as aioredis
@@ -126,4 +127,28 @@ async def require_admin_api_key(
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="invalid admin API key",
+    )
+
+
+async def require_bearer_credential(
+    authorization: str | None = Header(default=None, alias="Authorization"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Authenticate a bearer JWT VC and return the current agent principal."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="missing Authorization header",
+        )
+
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token.strip():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="expected Authorization: Bearer <token>",
+        )
+
+    return await identity_service.authenticate_agent_credential(
+        db=db,
+        credential_jwt=token.strip(),
     )

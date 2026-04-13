@@ -96,3 +96,52 @@ def verify_agent_credential(token: str) -> dict:
     if subject != claims.get("sub"):
         raise ValueError("credential subject id does not match sub")
     return claims
+
+
+def issue_session_assertion(
+    subject_did: str,
+    service_did: str,
+    service_id: str,
+    ontology_tag: str,
+    authorization_ref: str | None = None,
+    ttl_seconds: int | None = None,
+) -> tuple[str, str, datetime]:
+    """Issue a signed short-lived session assertion JWT."""
+    ensure_jwt_available()
+    private_key = load_private_key_from_jwk(load_issuer_private_jwk())
+
+    now = datetime.now(timezone.utc)
+    expires_at = now + timedelta(
+        seconds=ttl_seconds or settings.session_assertion_ttl_seconds
+    )
+    jti = str(uuid4())
+    claims = {
+        "iss": settings.issuer_did,
+        "sub": subject_did,
+        "aud": service_did,
+        "jti": jti,
+        "iat": int(now.timestamp()),
+        "nbf": int(now.timestamp()),
+        "exp": int(expires_at.timestamp()),
+        "service_id": service_id,
+        "ontology_tag": ontology_tag,
+        "authorization_ref": authorization_ref,
+    }
+    token = jwt.encode(claims, private_key, algorithm="EdDSA")
+    return token, jti, expires_at
+
+
+def verify_session_assertion(token: str) -> dict:
+    """Verify a signed session assertion JWT."""
+    ensure_jwt_available()
+    private_key = load_private_key_from_jwk(load_issuer_private_jwk())
+    return jwt.decode(
+        token,
+        key=private_key.public_key(),
+        algorithms=["EdDSA"],
+        issuer=settings.issuer_did,
+        options={
+            "require": ["exp", "iat", "nbf", "iss", "sub", "aud", "jti"],
+            "verify_aud": False,
+        },
+    )

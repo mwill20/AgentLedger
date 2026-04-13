@@ -234,9 +234,10 @@ class TestCacheHelpers:
 # ---------------------------------------------------------------------------
 
 class TestSchedulerConstants:
-    def test_schedule_has_two_tasks(self):
+    def test_schedule_has_three_tasks(self):
         from crawler.scheduler import CRAWL_SCHEDULE
 
-        assert len(CRAWL_SCHEDULE) == 2
+        assert len(CRAWL_SCHEDULE) == 3
         assert "crawl-all-active-services" in CRAWL_SCHEDULE
         assert "verify-all-pending-domains" in CRAWL_SCHEDULE
+        assert "expire-identity-records" in CRAWL_SCHEDULE

@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     issuer_private_jwk: str = ""
     credential_ttl_seconds: int = 31536000
     proof_nonce_ttl_seconds: int = 60
+    session_assertion_ttl_seconds: int = 300
+    approved_session_ttl_seconds: int = 900
+    authorization_request_ttl_seconds: int = 300
     revocation_cache_ttl_seconds: int = 300
     did_web_cache_ttl_seconds: int = 600
 

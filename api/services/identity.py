@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.config import settings
 from api.models.identity import (
+    AgentCredentialPrincipal,
     AgentIdentityResponse,
     AgentRegistrationRequest,
     AgentRegistrationResponse,
@@ -277,6 +278,76 @@ async def verify_agent_online(
         is_revoked=bool(row["is_revoked"]),
         capability_scope=list(row["capability_scope"] or []),
         risk_tier=row["risk_tier"],
+    )
+
+
+async def authenticate_agent_credential(
+    db: AsyncSession,
+    credential_jwt: str,
+) -> AgentCredentialPrincipal:
+    """Authenticate a bearer VC and return the current agent principal."""
+    _require_identity_runtime()
+    try:
+        claims = credentials.verify_agent_credential(credential_jwt)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid bearer credential",
+        ) from exc
+
+    did_value = claims["sub"]
+    result = await db.execute(
+        text(
+            """
+            SELECT
+                did,
+                public_key_jwk,
+                capability_scope,
+                risk_tier,
+                is_active,
+                is_revoked,
+                credential_expires_at
+            FROM agent_identities
+            WHERE did = :did
+            """
+        ),
+        {"did": did_value},
+    )
+    row = result.mappings().first()
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="unknown bearer credential",
+        )
+    if row["is_revoked"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="agent credential is revoked",
+        )
+    if not row["is_active"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="agent identity is inactive",
+        )
+
+    await db.execute(
+        text(
+            """
+            UPDATE agent_identities
+            SET last_seen_at = NOW()
+            WHERE did = :did
+            """
+        ),
+        {"did": did_value},
+    )
+
+    return AgentCredentialPrincipal(
+        did=did_value,
+        capability_scope=list(row["capability_scope"] or []),
+        risk_tier=row["risk_tier"],
+        public_key_jwk=_coerce_public_jwk(row["public_key_jwk"]),
+        credential_claims=claims,
+        credential_expires_at=row["credential_expires_at"],
     )
 
 

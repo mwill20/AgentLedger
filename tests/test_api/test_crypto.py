@@ -65,3 +65,24 @@ def test_issue_and_verify_agent_credential_roundtrip(monkeypatch):
     assert claims["iss"] == "did:web:agentledger.io"
     assert claims["sub"] == subject_did
     assert claims["vc"]["credentialSubject"]["agent_name"] == "TripPlanner"
+
+
+def test_issue_and_verify_session_assertion_roundtrip(monkeypatch):
+    """A session assertion JWT should verify successfully with the configured issuer key."""
+    issuer_private_jwk = _generate_private_jwk()
+
+    monkeypatch.setattr(settings, "issuer_did", "did:web:agentledger.io")
+    monkeypatch.setattr(settings, "issuer_private_jwk", json.dumps(issuer_private_jwk))
+    monkeypatch.setattr(settings, "session_assertion_ttl_seconds", 300)
+
+    token, _, _ = credentials.issue_session_assertion(
+        subject_did="did:key:z6MkSessionAgent",
+        service_did="did:web:payservice.com",
+        service_id="00000000-0000-0000-0000-000000000123",
+        ontology_tag="commerce.payments.send",
+    )
+    claims = credentials.verify_session_assertion(token)
+
+    assert claims["sub"] == "did:key:z6MkSessionAgent"
+    assert claims["aud"] == "did:web:payservice.com"
+    assert claims["ontology_tag"] == "commerce.payments.send"

@@ -18,4 +18,8 @@ CRAWL_SCHEDULE = {
         "task": "crawler.verify_all_pending",
         "schedule": 60 * 60 * 24,  # every 24 hours
     },
+    "expire-identity-records": {
+        "task": "crawler.expire_identity_records",
+        "schedule": 60,  # every minute
+    },
 }

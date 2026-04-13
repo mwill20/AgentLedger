@@ -159,6 +159,36 @@ CREATE TABLE revocation_events (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Layer 2: human approval queue for sensitive capabilities
+CREATE TABLE authorization_requests (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    agent_did TEXT NOT NULL,
+    service_id UUID NOT NULL REFERENCES services(id),
+    ontology_tag TEXT NOT NULL REFERENCES ontology_tags(tag),
+    sensitivity_tier INTEGER NOT NULL,
+    request_context JSONB NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT 'pending',
+    approver_id TEXT,
+    decided_at TIMESTAMPTZ,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Layer 2: short-lived session assertions
+CREATE TABLE session_assertions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    assertion_jti TEXT UNIQUE NOT NULL,
+    agent_did TEXT NOT NULL REFERENCES agent_identities(did),
+    service_id UUID NOT NULL REFERENCES services(id),
+    ontology_tag TEXT NOT NULL REFERENCES ontology_tags(tag),
+    assertion_token TEXT NOT NULL,
+    issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    authorization_ref UUID REFERENCES authorization_requests(id),
+    was_used BOOLEAN NOT NULL DEFAULT false,
+    used_at TIMESTAMPTZ
+);
+
 -- Indexes
 CREATE INDEX services_trust_tier ON services(trust_tier);
 CREATE INDEX services_trust_score ON services(trust_score DESC);
@@ -169,4 +199,9 @@ CREATE INDEX service_capabilities_embedding ON service_capabilities
 CREATE INDEX crawl_events_service ON crawl_events(service_id, created_at DESC);
 CREATE INDEX agent_identities_platform ON agent_identities(issuing_platform);
 CREATE INDEX agent_identities_risk_tier ON agent_identities(risk_tier);
+CREATE INDEX authorization_requests_status ON authorization_requests(status, expires_at);
+CREATE INDEX authorization_requests_service ON authorization_requests(service_id, status);
+CREATE INDEX session_assertions_agent ON session_assertions(agent_did, expires_at);
+CREATE INDEX session_assertions_service ON session_assertions(service_id, expires_at);
+CREATE INDEX session_assertions_expires ON session_assertions(expires_at);
 CREATE INDEX revocation_events_target ON revocation_events(target_type, target_id, created_at DESC);

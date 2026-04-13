@@ -25,6 +25,7 @@ def create_celery_app() -> Celery | None:
     )
     app.conf.include = [
         "crawler.tasks.crawl",
+        "crawler.tasks.expire_identity_records",
         "crawler.tasks.verify_domain",
     ]
     app.conf.beat_schedule = {
@@ -35,6 +36,10 @@ def create_celery_app() -> Celery | None:
         "verify-all-pending-domains": {
             "task": "crawler.verify_all_pending",
             "schedule": 60 * 60 * 24,  # every 24 hours
+        },
+        "expire-identity-records": {
+            "task": "crawler.expire_identity_records",
+            "schedule": 60,  # every minute
         },
     }
     return app
