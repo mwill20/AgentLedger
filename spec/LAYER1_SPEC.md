@@ -500,20 +500,45 @@ $env:COVERAGE_FILE = Join-Path $env:TEMP 'agentledger.coverage'
 pytest tests --cov=api --cov=crawler --cov-report=term -q
 ```
 
+#### Load Testing
+
+The reusable load harness lives at `tests/load/locustfile.py`.
+
+Documented load-test app mode:
+
+```powershell
+$env:API_KEYS='load-test-key'
+$env:IP_RATE_LIMIT='100000'
+$env:EMBEDDING_MODE='hash'
+$env:UVICORN_WORKERS='4'
+docker compose up -d --build app
+```
+
+Example profile run:
+
+```powershell
+$env:LOAD_PROFILE='manifests'
+$env:LOAD_API_KEY='load-test-key'
+$env:LOAD_FLUSH_RATE_LIMITS='0'
+locust -f tests/load/locustfile.py --headless -u 100 -r 20 --run-time 60s --host http://localhost:8000
+```
+
 ---
 
 ## Acceptance Criteria
 
-- [ ] POST /manifests returns 201 for valid manifest
-- [ ] Service appears in GET /services?ontology=travel.air.book
-- [ ] POST /search "book a flight to New York" returns it in top 3
-- [ ] DNS TXT verification updates trust_tier 1→2
-- [ ] 3 consecutive crawl failures marks service inactive
-- [ ] Exhausted API key quota returns 429
-- [ ] Invalid ontology_tag returns 422
-- [ ] Sensitive tag (sensitivity_tier >= 3) flagged for review
-- [ ] GET /ontology returns all 65 v0.1 tags
-- [ ] All endpoints < 500ms p95 under 100 concurrent requests
+As of April 2026, these criteria have been verified locally against the Docker stack. Performance verification used the documented load-test mode above (`EMBEDDING_MODE=hash`, `UVICORN_WORKERS=4`, `IP_RATE_LIMIT=100000`).
+
+- [x] POST /manifests returns 201 for valid manifest
+- [x] Service appears in GET /services?ontology=travel.air.book
+- [x] POST /search "book a flight to New York" returns it in top 3
+- [x] DNS TXT verification updates trust_tier 1→2
+- [x] 3 consecutive crawl failures marks service inactive
+- [x] Exhausted API key quota returns 429
+- [x] Invalid ontology_tag returns 422
+- [x] Sensitive tag (sensitivity_tier >= 3) flagged for review
+- [x] GET /ontology returns all 65 v0.1 tags
+- [x] All endpoints < 500ms p95 under 100 concurrent requests
 
 ---
 
@@ -531,3 +556,4 @@ pytest tests --cov=api --cov=crawler --cov-report=term -q
 ---
 
 *This spec is the source of truth for Layer 1. Update it before changing any behavior described here.*
+
