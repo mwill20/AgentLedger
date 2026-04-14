@@ -128,6 +128,50 @@ def test_get_identity_sessions_status_returns_payload(client, monkeypatch):
     assert response.json()["session_id"] == str(session_id)
 
 
+def test_get_identity_sessions_status_returns_pending_202(client, monkeypatch):
+    """Pending session flows should surface as 202 while waiting for approval."""
+    session_id = uuid4()
+    app.dependency_overrides[require_bearer_credential] = _principal
+
+    async def fake_get_session_status(db, principal, session_id):
+        return SessionStatusResponse(
+            status="pending_approval",
+            authorization_request_id=str(session_id),
+            expires_at=datetime(2026, 4, 13, 12, 5, tzinfo=timezone.utc),
+        )
+
+    monkeypatch.setattr(identity_router.sessions, "get_session_status", fake_get_session_status)
+
+    response = client.get(f"/v1/identity/sessions/{session_id}")
+
+    app.dependency_overrides.pop(require_bearer_credential, None)
+
+    assert response.status_code == 202
+    assert response.json()["status"] == "pending_approval"
+
+
+def test_get_identity_sessions_status_returns_expired_403(client, monkeypatch):
+    """Expired session flows should surface as 403 to the polling agent."""
+    session_id = uuid4()
+    app.dependency_overrides[require_bearer_credential] = _principal
+
+    async def fake_get_session_status(db, principal, session_id):
+        return SessionStatusResponse(
+            status="expired",
+            authorization_request_id=str(session_id),
+            expires_at=datetime(2026, 4, 13, 12, 5, tzinfo=timezone.utc),
+        )
+
+    monkeypatch.setattr(identity_router.sessions, "get_session_status", fake_get_session_status)
+
+    response = client.get(f"/v1/identity/sessions/{session_id}")
+
+    app.dependency_overrides.pop(require_bearer_credential, None)
+
+    assert response.status_code == 403
+    assert response.json()["status"] == "expired"
+
+
 def test_post_identity_sessions_redeem_accepts_assertion(client, monkeypatch):
     """POST /v1/identity/sessions/redeem should return an accepted payload."""
 

@@ -20,6 +20,8 @@ from api.models.identity import (
     AgentRegistrationResponse,
     AgentRevokeRequest,
     AgentRevokeResponse,
+    AuthorizationDecisionResponse,
+    AuthorizationPendingListResponse,
     CredentialVerificationRequest,
     CredentialVerificationResponse,
     SessionRedeemRequest,
@@ -29,7 +31,7 @@ from api.models.identity import (
     ServiceDidResolutionResponse,
     ServiceIdentityActivationResponse,
 )
-from api.services import identity, service_identity, sessions
+from api.services import authorization, identity, service_identity, sessions
 
 router = APIRouter()
 
@@ -127,15 +129,21 @@ async def request_session_assertion(
 )
 async def get_session_assertion_status(
     session_id: UUID,
+    response: Response,
     principal: AgentCredentialPrincipal = Depends(require_bearer_credential),
     db: AsyncSession = Depends(get_db),
 ) -> SessionStatusResponse:
     """Return the current status for one issued or pending session flow."""
-    return await sessions.get_session_status(
+    result = await sessions.get_session_status(
         db=db,
         principal=principal,
         session_id=session_id,
     )
+    if result.status == "pending_approval":
+        response.status_code = status.HTTP_202_ACCEPTED
+    elif result.status in {"denied", "expired"}:
+        response.status_code = status.HTTP_403_FORBIDDEN
+    return result
 
 
 @router.post(
@@ -185,4 +193,51 @@ async def activate_service_did(
         domain=domain,
         redis=redis,
         force_refresh=force_refresh,
+    )
+
+
+@router.get(
+    "/authorization/pending",
+    response_model=AuthorizationPendingListResponse,
+)
+async def get_pending_authorizations(
+    admin_api_key: str = Depends(require_admin_api_key),
+    db: AsyncSession = Depends(get_db),
+) -> AuthorizationPendingListResponse:
+    """List the pending HITL authorization queue."""
+    del admin_api_key
+    return await authorization.list_pending_authorizations(db=db)
+
+
+@router.post(
+    "/authorization/approve/{authorization_request_id}",
+    response_model=AuthorizationDecisionResponse,
+)
+async def approve_authorization(
+    authorization_request_id: UUID,
+    admin_api_key: str = Depends(require_admin_api_key),
+    db: AsyncSession = Depends(get_db),
+) -> AuthorizationDecisionResponse:
+    """Approve one pending authorization request and issue a linked session."""
+    return await authorization.approve_authorization_request(
+        db=db,
+        authorization_request_id=authorization_request_id,
+        approver_id=admin_api_key,
+    )
+
+
+@router.post(
+    "/authorization/deny/{authorization_request_id}",
+    response_model=AuthorizationDecisionResponse,
+)
+async def deny_authorization(
+    authorization_request_id: UUID,
+    admin_api_key: str = Depends(require_admin_api_key),
+    db: AsyncSession = Depends(get_db),
+) -> AuthorizationDecisionResponse:
+    """Deny one pending authorization request."""
+    return await authorization.deny_authorization_request(
+        db=db,
+        authorization_request_id=authorization_request_id,
+        approver_id=admin_api_key,
     )

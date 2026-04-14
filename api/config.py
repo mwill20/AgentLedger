@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     authorization_request_ttl_seconds: int = 300
     revocation_cache_ttl_seconds: int = 300
     did_web_cache_ttl_seconds: int = 600
+    authorization_webhook_url: str = ""
+    authorization_webhook_secret: str = ""
+    authorization_webhook_timeout_seconds: float = 3.0
 
     # Embeddings: "model" = sentence-transformers (GPU/prod), "hash" = fast fallback (CPU/CI/load-test)
     embedding_mode: str = "model"

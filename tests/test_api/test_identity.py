@@ -203,3 +203,110 @@ def test_post_identity_services_activate_returns_payload(
 
     assert response.status_code == 200
     assert response.json()["identity_status"] == "active"
+
+
+def test_get_authorization_pending_returns_queue(
+    client,
+    admin_api_key_headers,
+    monkeypatch,
+):
+    """GET /v1/authorization/pending should return the HITL queue."""
+
+    async def fake_list_pending_authorizations(db):
+        return {
+            "total": 1,
+            "results": [
+                {
+                    "id": "00000000-0000-0000-0000-000000000777",
+                    "agent_did": "did:key:z6MkPendingAgent",
+                    "service_domain": "records.example",
+                    "service_did": "did:web:records.example",
+                    "ontology_tag": "health.records.retrieve",
+                    "sensitivity_tier": 3,
+                    "request_context": {"record_type": "summary"},
+                    "status": "pending",
+                    "approver_id": None,
+                    "decided_at": None,
+                    "expires_at": "2026-04-13T12:05:00Z",
+                    "created_at": "2026-04-13T12:00:00Z",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(
+        identity_router.authorization,
+        "list_pending_authorizations",
+        fake_list_pending_authorizations,
+    )
+
+    response = client.get("/v1/authorization/pending", headers=admin_api_key_headers)
+
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+
+
+def test_post_authorization_approve_returns_session(
+    client,
+    admin_api_key_headers,
+    monkeypatch,
+):
+    """POST /v1/authorization/approve/{id} should issue a linked session."""
+
+    async def fake_approve_authorization_request(db, authorization_request_id, approver_id):
+        return {
+            "authorization_request_id": str(authorization_request_id),
+            "status": "approved",
+            "approver_id": approver_id,
+            "session_id": "00000000-0000-0000-0000-000000000888",
+            "assertion_jwt": "header.payload.signature.with-enough-length",
+            "service_did": "did:web:records.example",
+            "expires_at": "2026-04-13T12:15:00Z",
+        }
+
+    monkeypatch.setattr(
+        identity_router.authorization,
+        "approve_authorization_request",
+        fake_approve_authorization_request,
+    )
+
+    response = client.post(
+        "/v1/authorization/approve/00000000-0000-0000-0000-000000000777",
+        headers=admin_api_key_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "approved"
+    assert response.json()["session_id"] == "00000000-0000-0000-0000-000000000888"
+
+
+def test_post_authorization_deny_returns_denied(
+    client,
+    admin_api_key_headers,
+    monkeypatch,
+):
+    """POST /v1/authorization/deny/{id} should deny the request."""
+
+    async def fake_deny_authorization_request(db, authorization_request_id, approver_id):
+        return {
+            "authorization_request_id": str(authorization_request_id),
+            "status": "denied",
+            "approver_id": approver_id,
+            "session_id": None,
+            "assertion_jwt": None,
+            "service_did": None,
+            "expires_at": "2026-04-13T12:05:00Z",
+        }
+
+    monkeypatch.setattr(
+        identity_router.authorization,
+        "deny_authorization_request",
+        fake_deny_authorization_request,
+    )
+
+    response = client.post(
+        "/v1/authorization/deny/00000000-0000-0000-0000-000000000777",
+        headers=admin_api_key_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "denied"

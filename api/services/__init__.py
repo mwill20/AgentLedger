@@ -2,6 +2,7 @@
 
 from api.services import (
     credentials,
+    authorization,
     did,
     embedder,
     identity,
@@ -13,6 +14,7 @@ from api.services import (
 )
 
 __all__ = [
+    "authorization",
     "credentials",
     "did",
     "embedder",

@@ -244,6 +244,42 @@ class SessionRedeemResponse(BaseModel):
     authorization_ref: str | None = None
 
 
+class AuthorizationRequestRecord(BaseModel):
+    """One human approval queue record."""
+
+    id: str
+    agent_did: str
+    service_domain: str
+    service_did: str
+    ontology_tag: str
+    sensitivity_tier: int
+    request_context: dict[str, Any] = Field(default_factory=dict)
+    status: Literal["pending", "approved", "denied", "expired"]
+    approver_id: str | None = None
+    decided_at: datetime | None = None
+    expires_at: datetime
+    created_at: datetime
+
+
+class AuthorizationPendingListResponse(BaseModel):
+    """Pending human approval queue."""
+
+    total: int
+    results: list[AuthorizationRequestRecord] = Field(default_factory=list)
+
+
+class AuthorizationDecisionResponse(BaseModel):
+    """Admin decision result for one authorization request."""
+
+    authorization_request_id: str
+    status: Literal["approved", "denied"]
+    approver_id: str
+    session_id: str | None = None
+    assertion_jwt: str | None = None
+    service_did: str | None = None
+    expires_at: datetime
+
+
 class ServiceDidResolutionResponse(BaseModel):
     """Resolved did:web document and cache metadata for a service."""
 

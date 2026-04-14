@@ -13,7 +13,8 @@ def _expire_identity_records_impl() -> dict[str, int]:
             cur.execute(
                 """
                 UPDATE authorization_requests
-                SET status = 'expired'
+                SET status = 'expired',
+                    decided_at = COALESCE(decided_at, NOW())
                 WHERE status = 'pending'
                   AND expires_at <= NOW()
                 """

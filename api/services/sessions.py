@@ -193,7 +193,49 @@ async def request_session(
                 },
             )
             authorization_request_id = auth_result.scalar_one()
+            await db.execute(
+                text(
+                    """
+                    INSERT INTO crawl_events (service_id, event_type, domain, details, created_at)
+                    VALUES (
+                        :service_id,
+                        'authorization_requested',
+                        :service_domain,
+                        CAST(:details AS JSONB),
+                        NOW()
+                    )
+                    """
+                ),
+                {
+                    "service_id": service_row["service_id"],
+                    "service_domain": request.service_domain,
+                    "details": json.dumps(
+                        {
+                            "authorization_request_id": str(authorization_request_id),
+                            "agent_did": principal.did,
+                            "ontology_tag": request.ontology_tag,
+                            "sensitivity_tier": int(service_row["sensitivity_tier"]),
+                        }
+                    ),
+                },
+            )
             await db.commit()
+            from api.services import authorization as authorization_service
+
+            await authorization_service.dispatch_authorization_webhook(
+                "authorization.pending",
+                {
+                    "authorization_request_id": str(authorization_request_id),
+                    "status": "pending",
+                    "agent_did": principal.did,
+                    "service_domain": request.service_domain,
+                    "service_did": _service_did_from_domain(request.service_domain),
+                    "ontology_tag": request.ontology_tag,
+                    "sensitivity_tier": int(service_row["sensitivity_tier"]),
+                    "request_context": request.request_context,
+                    "expires_at": expires_at.isoformat(),
+                },
+            )
             return SessionStatusResponse(
                 status="pending_approval",
                 authorization_request_id=str(authorization_request_id),
