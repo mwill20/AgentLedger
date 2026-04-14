@@ -43,7 +43,7 @@ AgentLedger is not a product. It is a stack. Each layer depends on the one below
 │  LAYER 3: TRUST & VERIFICATION              │
 │  Blockchain-anchored attestation ledger      │
 ├──────────────────────────────────────────────┤
-│  LAYER 2: IDENTITY & ATTESTATION            │  ← In Design
+│  LAYER 2: IDENTITY & ATTESTATION            │  ← Complete
 │  Agent identity, credential issuance        │
 ├──────────────────────────────────────────────┤
 │  LAYER 1: DISCOVERY & DISTRIBUTION          │  ← Complete
@@ -54,7 +54,7 @@ AgentLedger is not a product. It is a stack. Each layer depends on the one below
 ## Current Build Status
 
 - Layer 1: Complete. The Manifest Registry is built, tested, and locally verified against the Layer 1 acceptance gates.
-- Layer 2: In Design. The identity and attestation architecture is locked in `spec/LAYER2_SPEC.md` on branch `layer2/identity-attestation`.
+- Layer 2: Complete. The identity and authorization layer is built, tested, and verified in the current codebase.
 
 ---
 
@@ -204,11 +204,11 @@ The NorthStar competitive moat is not technical. It is **standard adoption** + *
 - [ ] AgentLedger Capability Ontology v1.0 published as open standard
 - [ ] First agent platform integrates AgentLedger discovery natively
 - [x] Layer 2 spec complete
-- [ ] Layer 2 build begins (status: In Design)
+- [x] Layer 2 built and locally verified (Identity & Authorization complete)
 - [ ] EU AI Act enforcement (August 2026) — AgentLedger Audit Chain positioned as compliance solution
 
 ### 2027 — Trust Infrastructure
-- [ ] Layer 2 built — agent identity credentials live
+- [ ] Layer 2 deployed publicly — agent identity credentials live outside local/dev environments
 - [ ] Layer 3 built — Trust Ledger on-chain, 3+ auditor partners onboarded
 - [ ] Cross-registry federation live — AgentLedger blocklist shared with 5+ registries
 - [ ] 10,000+ registered services

@@ -1,25 +1,24 @@
 # AgentLedger — Layer 2 Completion Summary
 
-**For:** Architect sign-off and Layer 3 planning  
+**For:** architect sign-off and Layer 3 planning  
 **Date:** April 14, 2026  
-**Branch:** `main`  
-**Final commit:** (this commit)  
-**Test suite:** 213 tests, 0 failures
+**Implementation Branch:** `layer2/identity-attestation`  
+**Verification Scope:** full local test suite, Layer 2-focused suite, and identity verify load test
 
 ---
 
-## 1. What Was Built
+## 1. What Shipped
 
-Layer 2 is the **Identity & Authorization Layer** — cryptographic agent identity, credential verification, session assertion, service identity resolution, and human-in-the-loop approval for sensitive operations.
+Layer 2 is the identity and authorization layer for AgentLedger. The current implementation includes:
 
 | Capability | Description |
 |------------|-------------|
-| **Agent Identity** | Ed25519 did:key registration with proof-of-possession, JWT VC issuance |
-| **Credential Verification** | Online JWT verification with three-tier revocation checking |
-| **Session Assertions** | Short-lived signed JWTs scoping agent access to specific services and ontology tags |
-| **Service Identity** | did:web resolution for service domains with DNS validation and caching |
-| **HITL Authorization** | Sensitivity-gated approval queue for high-risk operations (tier 3+) |
-| **Revocation** | Admin-initiated revocation with Redis-cached invalidation propagation |
+| Agent identity | Ed25519 `did:key` registration with proof of key control and JWT VC issuance |
+| Credential verification | Online verification with revocation enforcement |
+| Session assertions | Short-lived JWT assertions scoped to one service DID and ontology tag |
+| Service identity | `did:web` resolution, signed manifest validation, and trust-score activation |
+| HITL authorization | Pending approval queue for `sensitivity_tier >= 3` actions |
+| Revocation | Admin-triggered revocation with Redis-backed hot-path checks |
 
 ---
 
@@ -27,216 +26,160 @@ Layer 2 is the **Identity & Authorization Layer** — cryptographic agent identi
 
 | Phase | Scope | Commit | Status |
 |-------|-------|--------|--------|
-| 1 — Identity Foundation | Agent registration, DID infrastructure, JWT VC issuance, Ed25519 crypto | `9b71f50` | **Done** |
-| 2 — Session Assertion Engine | Session request/issuance/redemption, service trust gating | `3f9ad0d` | **Done** |
-| 3 — Service Identity Activation | did:web resolution, DNS-based attestation, Redis caching | `678aaf4` | **Done** |
-| 4 — HITL Approval Flow | Authorization request queue, admin approve/deny, linked session issuance | `601629c` | **Done** |
-| 5 — Identity Hardening | Revocation caching, proof nonce replay protection, input sanitization | `c6fce69` | **Done** |
-| 6 — Runtime Packaging | Docker integration, env configuration, test infrastructure | `3142147` | **Done** |
-| 7 — Performance Optimization | Key caching, Redis round-trip reduction, hot-path streamlining | (this commit) | **Done** |
+| 1 | Identity foundation | `9b71f50` | Done |
+| 2 | Session assertion engine | `3f9ad0d` | Done |
+| 3 | Service identity activation | `678aaf4` | Done |
+| 4 | HITL approval flow | `601629c` | Done |
+| 5 | Identity hardening | `c6fce69` | Done |
+| 6 | Runtime packaging | `3142147` | Done |
+| 7 | Final verification and documentation | `79c009d` | Done |
 
 ---
 
 ## 3. API Surface
 
-Layer 2 adds 9 new endpoints under `/v1/identity` and `/v1/authorization`:
+Layer 2 adds 13 endpoints:
 
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
-| `GET` | `/v1/identity/.well-known/did.json` | None | Issuer DID document (public) |
-| `POST` | `/v1/identity/agents/register` | API key | Register agent DID, issue JWT VC |
-| `POST` | `/v1/identity/agents/verify` | None | Online credential verification |
-| `GET` | `/v1/identity/agents/{did}` | None | Public agent identity record |
-| `POST` | `/v1/identity/agents/{did}/revoke` | Admin | Revoke agent credential |
-| `GET` | `/v1/identity/services/{domain}/did` | None | Resolve service did:web document |
-| `POST` | `/v1/identity/services/{domain}/activate` | API key | Activate service identity |
-| `POST` | `/v1/identity/agents/session` | Bearer VC | Request session assertion |
-| `POST` | `/v1/identity/agents/session/redeem` | None | Redeem session at service |
-| `GET` | `/v1/authorization/pending` | Admin | List pending HITL approvals |
-| `POST` | `/v1/authorization/approve/{id}` | Admin | Approve authorization request |
-| `POST` | `/v1/authorization/deny/{id}` | Admin | Deny authorization request |
+| `GET` | `/v1/identity/.well-known/did.json` | None | Issuer DID document |
+| `POST` | `/v1/identity/agents/register` | API key | Register agent DID and issue VC |
+| `POST` | `/v1/identity/agents/verify` | None | Verify a presented credential |
+| `GET` | `/v1/identity/agents/{did}` | None | Resolve a registered agent record |
+| `POST` | `/v1/identity/agents/{did}/revoke` | Admin key | Revoke an agent credential |
+| `POST` | `/v1/identity/sessions/request` | Bearer VC | Request a session assertion |
+| `GET` | `/v1/identity/sessions/{id}` | Bearer VC | Poll issued or pending session state |
+| `POST` | `/v1/identity/sessions/redeem` | None | Redeem an assertion once |
+| `GET` | `/v1/identity/services/{domain}/did` | None | Resolve a service `did:web` document |
+| `POST` | `/v1/identity/services/{domain}/activate` | API key | Activate signed service identity |
+| `GET` | `/v1/authorization/pending` | Admin key | List pending HITL requests |
+| `POST` | `/v1/authorization/approve/{id}` | Admin key | Approve and issue linked session |
+| `POST` | `/v1/authorization/deny/{id}` | Admin key | Deny a pending request |
 
 ---
 
-## 4. Cryptographic Architecture
+## 4. Cryptographic Shape
 
-### DID Methods
-| Method | Usage | Key Type |
-|--------|-------|----------|
-| `did:key` | Agent identities | Ed25519 (multicodec `0xed01`, base58btc) |
-| `did:web` | Service identities | Resolved via `https://{domain}/.well-known/did.json` |
-
-### JWT Credentials
-- **Algorithm:** EdDSA (Ed25519)
-- **Issuer:** `did:web:agentledger.io` (configurable via `ISSUER_DID`)
-- **TTL:** 365 days (configurable via `CREDENTIAL_TTL_SECONDS`)
-- **Required claims:** `iss`, `sub`, `exp`, `iat`, `nbf`, `jti`
-- **VC structure:** W3C Verifiable Credential with `AgentIdentityCredential` type
-
-### Proof of Possession
-Registration requires a detached proof containing:
-- `nonce` — unique per registration, replay-protected via Redis NX
-- `created_at` — must be within the replay window (`PROOF_NONCE_TTL_SECONDS`)
-- `signature` — Ed25519 signature over the canonical registration payload
-
-### Key Management
-- Issuer private key: Ed25519 JWK stored in `ISSUER_PRIVATE_JWK` env var
-- Public key cached at module level after first load (zero-cost subsequent verifications)
-- Agent public keys derived from DID documents and stored as JSONB in `agent_identities`
+- Agent DID method: `did:key`
+- Service DID method: `did:web`
+- JWT algorithm: `EdDSA` / Ed25519
+- Issuer DID: configurable via `ISSUER_DID`
+- Credential TTL: configurable via `CREDENTIAL_TTL_SECONDS`
+- Registration proof replay guard: Redis `NX` nonce storage
+- Session proof replay guard: Redis `NX` nonce storage
 
 ---
 
-## 5. Revocation Architecture
+## 5. Database Additions
 
-Three-tier revocation check on the verify hot path:
+Layer 2 adds four tables:
 
-```
-Request → Redis SISMEMBER (O(1)) → Per-DID cache GET → DB SELECT
-         ↓ hit: return revoked     ↓ hit: return revoked  ↓ source of truth
-```
-
-| Tier | Mechanism | Latency | TTL |
-|------|-----------|---------|-----|
-| 1 — SET check | `SISMEMBER identity:revoked_set` | ~0.1ms | 300s |
-| 2 — Per-DID cache | `GET identity:revoked:{sha256(did)}` | ~0.2ms | Configurable |
-| 3 — DB lookup | `SELECT is_revoked FROM agent_identities` | ~2-5ms | Source of truth |
-
-On revocation, both the SET and per-DID cache are updated immediately.
-
----
-
-## 6. Session Assertion Flow
-
-```
-Agent                    AgentLedger                   Service
-  |                          |                            |
-  |-- POST /session -------->|                            |
-  |   (bearer VC + scope)    |                            |
-  |                          |-- check sensitivity tier --|
-  |                          |   tier < 3: auto-issue     |
-  |                          |   tier >= 3: HITL queue    |
-  |<-- assertion JWT --------|                            |
-  |                                                       |
-  |-- POST /session/redeem -------------------------------->|
-  |   (assertion JWT)        |                            |
-  |                          |<-- verify assertion -------|
-  |                          |-- return agent identity ---|
-```
-
----
-
-## 7. Database Schema Additions
-
-### New Tables
 | Table | Purpose |
 |-------|---------|
-| `agent_identities` | Agent DID registry — keys, capabilities, revocation state |
-| `revocation_events` | Append-only audit log of all revocations |
-| `service_identities` | Service did:web records with attestation scores |
-| `sessions` | Active session assertions with expiry tracking |
-| `authorization_requests` | HITL approval queue for sensitive operations |
+| `agent_identities` | Agent DID registry and revocation state |
+| `session_assertions` | Issued assertion tokens and one-use redemption tracking |
+| `authorization_requests` | HITL approval queue and timeout state |
+| `revocation_events` | Append-only revocation audit log |
+
+Service identity state is derived from the current manifest, `services.public_key`, `services.last_verified_at`, and crawl events. There is no dedicated `service_identities` table in v0.1.
 
 ---
 
-## 8. Performance
+## 6. Performance Snapshot
 
-### Verify Endpoint (`POST /v1/identity/agents/verify`)
+### Verify Endpoint
 
-Load test: 100 concurrent users, 30 seconds, Locust
+Target endpoint: `POST /v1/identity/agents/verify`
+
+Load test snapshot:
 
 | Metric | Value |
 |--------|-------|
+| Concurrency | 100 users |
+| Duration | 30 seconds |
 | Total requests | 5,350 |
-| Failures | 0 (0%) |
+| Failures | 0 |
 | Median | 61ms |
-| p95 | **110ms** |
+| p95 | 110ms |
 | p99 | 160ms |
-| Max | 1,037ms |
-| Throughput | ~220 req/s |
 
-### Optimizations Applied
-1. **Ed25519 public key caching** — private key parsed and public key derived once per process lifetime, eliminating repeated JSON parse + cryptographic key construction (~50ms savings per call)
-2. **Single SISMEMBER** — removed redundant `EXISTS` call before `SISMEMBER` (Redis returns 0 for non-existent keys, which is the correct "not revoked" answer)
-3. **Removed hot-path pre-warm** — lazy `prewarm_revocation_set` removed from verify to eliminate random DB query spikes
-4. **Removed per-request DB write** — `last_seen_at` UPDATE + COMMIT removed from verify hot path
-5. **run_in_executor** — Ed25519 signature verification runs in thread pool to avoid blocking the async event loop
-6. **Trimmed response model** — `CredentialVerificationResponse` reduced to 4 fields: `valid`, `did`, `expires_at`, `risk_tier`
+Key hot-path improvements:
+
+1. Cached issuer key material at module scope
+2. Reduced revocation lookup to a single `SISMEMBER` plus per-DID fallback
+3. Removed lazy revocation prewarm from the verify path
+4. Removed per-request `last_seen_at` write from verify
+5. Offloaded signature verification from the async event loop
 
 ---
 
-## 9. Acceptance Criteria — All Verified
+## 7. Acceptance Criteria
 
 | # | Criterion | Status |
 |---|-----------|--------|
-| 1 | `POST /identity/agents/register` issues a signed JWT VC for a valid did:key registration | **Passed** |
-| 2 | `POST /identity/agents/verify` returns online verification status with revocation check | **Passed** |
-| 3 | Bearer VC authentication gates `/identity/agents/session` with 401/403 | **Passed** |
-| 4 | Admin revocation propagates to Redis cache and blocks subsequent verify/auth | **Passed** |
-| 5 | Service did:web resolution fetches and caches `/.well-known/did.json` | **Passed** |
-| 6 | Session assertion JWT is scoped to service DID + ontology tag | **Passed** |
-| 7 | Sensitivity tier >= 3 routes to HITL queue instead of auto-issuance | **Passed** |
-| 8 | HITL approve issues a linked session; deny blocks it | **Passed** |
-| 9 | Proof nonce replay protection prevents credential reuse | **Passed** |
-| 10 | Verify endpoint p95 < 200ms at 100 concurrent users | **Passed** (110ms) |
+| 1 | `POST /identity/agents/register` issues a signed VC for a valid `did:key` registration | Passed |
+| 2 | `POST /identity/agents/verify` performs online verification with revocation checks | Passed |
+| 3 | Bearer VC authentication gates `/identity/sessions/request` | Passed |
+| 4 | Revoked credentials are rejected on verify and bearer-auth paths | Passed |
+| 5 | Service `did:web` resolution fetches and caches `/.well-known/did.json` | Passed |
+| 6 | Session assertions are scoped to one service DID and ontology tag | Passed |
+| 7 | `sensitivity_tier >= 3` requests enter the HITL queue | Passed |
+| 8 | Approval issues a linked session and denial blocks issuance | Passed |
+| 9 | Proof nonce replay protection prevents detached proof reuse | Passed |
+| 10 | Verify endpoint stays under 200ms p95 at 100 concurrent users | Passed |
 
 ---
 
-## 10. Test Coverage
+## 8. Test Verification
 
-### 213 Tests, 0 Failures
+Local verification completed with:
 
-| Module | Files | Focus |
-|--------|-------|-------|
-| Identity endpoints | `test_identity.py` | Router-level tests for all 9 identity endpoints |
-| Identity service | `test_identity_service.py` | Service-layer revocation cache, proof nonce, concurrency |
-| Session flow | `test_session.py` | Session request, issuance, redemption, expiry |
-| Authorization | `test_authorization.py` | HITL queue, approve, deny, sensitivity routing |
-| Service identity | `test_service_identity.py` | did:web resolution, DNS attestation, activation |
-| Credentials | `test_credentials.py` | JWT issuance, verification, claims validation |
-| Crypto | `test_crypto.py` | Ed25519 key derivation, signing, JWK handling |
-| DID | `test_did.py` | did:key construction, document building, multicodec |
-| Models | `test_identity_models.py` | Pydantic validation, sanitization, scope validation |
-| + Layer 1 tests | 14 test files | All Layer 1 tests continue to pass |
+- `pytest -q` -> `213 passed`
+- Layer 2-focused suite -> `34 passed`
 
-### Load Tests
-- `tests/load/locustfile.py` — Extended with `identity_verify`, `identity_lookup`, and `identity_mixed` profiles
-- Verified: verify endpoint at 110ms p95, 0% failure rate under 100 concurrent users
+Primary Layer 2 coverage files:
+
+| File | Focus |
+|------|-------|
+| `tests/test_api/test_identity.py` | Agent, service DID, and authorization routes |
+| `tests/test_api/test_identity_service.py` | Revocation cache and proof nonce behavior |
+| `tests/test_api/test_sessions.py` | Session request, poll, and redeem routes |
+| `tests/test_api/test_sessions_service.py` | Session service replay protections |
+| `tests/test_api/test_authorization.py` | HITL queue, approve, and deny flows |
+| `tests/test_api/test_service_identity.py` | `did:web` resolution and activation |
+| `tests/test_api/test_crypto.py` | Ed25519, DID, and JWT round-trips |
+| `tests/test_crawler/test_expire_identity_records.py` | Session and authorization expiry |
+| `tests/test_crawler/test_revalidate_service_identity.py` | Service identity revalidation |
 
 ---
 
-## 11. Configuration Surface (Layer 2 Additions)
+## 9. Configuration Surface
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `ISSUER_DID` | `did:web:agentledger.io` | Issuer DID for JWT VC `iss` claim |
-| `ISSUER_PRIVATE_JWK` | (required) | Ed25519 private JWK for credential signing |
-| `CREDENTIAL_TTL_SECONDS` | `31536000` (1 year) | JWT VC expiration |
-| `SESSION_ASSERTION_TTL_SECONDS` | `900` (15 min) | Session assertion expiration |
-| `PROOF_NONCE_TTL_SECONDS` | `300` (5 min) | Proof replay window |
-| `REVOCATION_CACHE_TTL_SECONDS` | `3600` (1 hour) | Per-DID revocation cache TTL |
-| `SERVICE_DID_CACHE_TTL` | `86400` (24 hours) | did:web resolution cache TTL |
-| `HITL_SENSITIVITY_THRESHOLD` | `3` | Minimum sensitivity tier requiring HITL approval |
+| `ISSUER_DID` | `did:web:agentledger.io` | VC issuer DID |
+| `ISSUER_PRIVATE_JWK` | empty | Ed25519 private JWK for signing |
+| `CREDENTIAL_TTL_SECONDS` | `31536000` | Credential expiration |
+| `PROOF_NONCE_TTL_SECONDS` | `60` | Proof replay window |
+| `SESSION_ASSERTION_TTL_SECONDS` | `300` | Standard session lifetime |
+| `APPROVED_SESSION_TTL_SECONDS` | `900` | Approved HITL session lifetime |
+| `AUTHORIZATION_REQUEST_TTL_SECONDS` | `300` | Pending request timeout |
+| `REVOCATION_CACHE_TTL_SECONDS` | `300` | Revocation cache TTL |
+| `DID_WEB_CACHE_TTL_SECONDS` | `600` | `did:web` cache TTL |
+| `AUTHORIZATION_WEBHOOK_URL` | empty | Optional approval webhook |
+| `AUTHORIZATION_WEBHOOK_SECRET` | empty | Webhook signing secret |
+| `AUTHORIZATION_WEBHOOK_TIMEOUT_SECONDS` | `3.0` | Webhook timeout |
 
 ---
 
-## 12. Layer 3 Integration Points
+## 10. Layer 3 Handoff
 
-### 12.1 On-Chain Attestation
-The `attestation_score` field in the trust score formula (currently 0.0) is ready for Layer 3 to provide blockchain-backed attestation values. `service_identities.attestation_score` stores the current value.
+Layer 3 can extend the current implementation without breaking Layer 2 contracts:
 
-### 12.2 Reputation Score
-The `reputation_score` field in the trust score formula (currently 0.0) can receive cross-agent reputation signals from Layer 3's trust network.
-
-### 12.3 Trust Tier 4
-`services.trust_tier` accepts integer values up to 4. Tier 4 ("Ledger Attested") requires Layer 3's on-chain verification. The `agent_identities` table can similarly be extended.
-
-### 12.4 Credential Revocation Lists
-The `revocation_events` table provides an append-only audit trail suitable for publishing as a W3C Credential Status List or feeding into a Layer 3 on-chain revocation registry.
-
-### 12.5 Federation
-The did:web resolution infrastructure (`resolve_service_did_document`) is designed to support cross-registry trust by resolving DID documents from any domain. Layer 3 can extend this to federated agent discovery across multiple AgentLedger instances.
+- replace or augment service `attestation_score` evidence with third-party or on-chain attestations
+- extend `reputation_score` beyond local session outcomes into cross-agent or cross-registry trust signals
+- publish revocation state into external status lists or federated trust infrastructure
 
 ---
 
-*Canonical spec: `spec/LAYER2_SPEC.md` — update it before changing any Layer 2 behavior.*  
-*This completion summary is a point-in-time snapshot for architect review. The spec remains the source of truth.*
+Canonical behavior remains defined by [LAYER2_SPEC.md](LAYER2_SPEC.md).
