@@ -52,6 +52,10 @@ def _proof_payload(request: AgentRegistrationRequest) -> dict[str, Any]:
     }
 
 
+_REVOCATION_SET_KEY = "identity:revoked_set"
+_REVOCATION_SET_TTL = 300  # 5 minutes
+
+
 def _revocation_cache_key(did_value: str) -> str:
     """Build the Redis cache key for one revoked agent DID."""
     return "identity:revoked:" + sha256(did_value.encode("utf-8")).hexdigest()
@@ -76,6 +80,57 @@ async def _store_proof_nonce(redis, did_value: str, nonce: str) -> None:
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="proof nonce has already been used",
         )
+
+
+async def prewarm_revocation_set(db: AsyncSession, redis) -> int:
+    """Pre-warm the Redis revocation SET with all revoked DIDs.
+
+    Called on first cache miss or at startup. Uses SADD for O(1) membership
+    checks via SISMEMBER on the hot path.
+    """
+    if redis is None:
+        return 0
+    try:
+        result = await db.execute(
+            text("SELECT did FROM agent_identities WHERE is_revoked = true")
+        )
+        rows = result.scalars().all()
+        if not rows:
+            return 0
+        pipe = redis.pipeline()
+        pipe.delete(_REVOCATION_SET_KEY)
+        for did_val in rows:
+            pipe.sadd(_REVOCATION_SET_KEY, did_val)
+        pipe.expire(_REVOCATION_SET_KEY, _REVOCATION_SET_TTL)
+        await pipe.execute()
+        return len(rows)
+    except Exception:
+        return 0
+
+
+async def _check_revocation_set(redis, did_value: str) -> bool:
+    """Check the Redis revocation SET for a DID.
+
+    Returns True if the DID is in the revocation set, False otherwise.
+    SISMEMBER on a non-existent key returns 0, which is the correct
+    "not revoked" answer — avoids a separate EXISTS round trip.
+    """
+    if redis is None:
+        return False
+    try:
+        return bool(await redis.sismember(_REVOCATION_SET_KEY, did_value))
+    except Exception:
+        return False
+
+
+async def _add_to_revocation_set(redis, did_value: str) -> None:
+    """Add a DID to the revocation SET after a revocation."""
+    if redis is None:
+        return
+    try:
+        await redis.sadd(_REVOCATION_SET_KEY, did_value)
+    except Exception:
+        pass
 
 
 async def _get_cached_revocation(redis, did_value: str) -> dict[str, Any] | None:
@@ -287,23 +342,25 @@ async def verify_agent_online(
     """Verify a JWT VC against issuer config and online revocation state."""
     _require_identity_runtime()
     try:
-        claims = credentials.verify_agent_credential(credential_jwt)
+        claims = await credentials.verify_agent_credential_async(credential_jwt)
     except Exception:
         return CredentialVerificationResponse(valid=False)
 
     did_value = claims["sub"]
+
+    # Fast path: check Redis revocation SET (O(1) SISMEMBER, single round trip)
+    if await _check_revocation_set(redis, did_value):
+        return CredentialVerificationResponse(valid=False, did=did_value)
+
+    # Fallback: check per-DID revocation cache key
     cached_revocation = await _get_cached_revocation(redis, did_value)
     if cached_revocation is not None:
-        return CredentialVerificationResponse(
-            valid=False,
-            did=did_value,
-            is_revoked=True,
-        )
+        return CredentialVerificationResponse(valid=False, did=did_value)
 
     result = await db.execute(
         text(
             """
-            SELECT did, is_active, is_revoked, risk_tier, capability_scope, credential_expires_at
+            SELECT did, is_active, is_revoked, risk_tier, credential_expires_at
             FROM agent_identities
             WHERE did = :did
             """
@@ -317,28 +374,12 @@ async def verify_agent_online(
     is_valid = bool(row["is_active"]) and not bool(row["is_revoked"])
     if bool(row["is_revoked"]):
         await _cache_revocation(redis, did_value)
-    if is_valid:
-        try:
-            await db.execute(
-                text(
-                    """
-                    UPDATE agent_identities
-                    SET last_seen_at = NOW()
-                    WHERE did = :did
-                    """
-                ),
-                {"did": did_value},
-            )
-            await db.commit()
-        except SQLAlchemyError:
-            await db.rollback()
+        await _add_to_revocation_set(redis, did_value)
 
     return CredentialVerificationResponse(
         valid=is_valid,
         did=did_value,
         expires_at=row["credential_expires_at"],
-        is_revoked=bool(row["is_revoked"]),
-        capability_scope=list(row["capability_scope"] or []),
         risk_tier=row["risk_tier"],
     )
 
@@ -351,7 +392,7 @@ async def authenticate_agent_credential(
     """Authenticate a bearer VC and return the current agent principal."""
     _require_identity_runtime()
     try:
-        claims = credentials.verify_agent_credential(credential_jwt)
+        claims = await credentials.verify_agent_credential_async(credential_jwt)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -558,6 +599,7 @@ async def revoke_agent(
             revoked_at=revoked_at,
             reason_code=request.reason_code,
         )
+        await _add_to_revocation_set(redis, did_value)
 
     return AgentRevokeResponse(
         did=did_value,

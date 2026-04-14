@@ -81,13 +81,25 @@ def issue_agent_credential(
     return token, expires_at
 
 
-def verify_agent_credential(token: str) -> dict:
-    """Verify a JWT VC and return its claims."""
+_cached_public_key = None
+
+
+def _get_public_key():
+    """Return the cached issuer public key, loading once on first call."""
+    global _cached_public_key
+    if _cached_public_key is None:
+        _cached_public_key = load_private_key_from_jwk(
+            load_issuer_private_jwk()
+        ).public_key()
+    return _cached_public_key
+
+
+def _verify_agent_credential_sync(token: str) -> dict:
+    """CPU-bound JWT verification — runs synchronously."""
     ensure_jwt_available()
-    private_key = load_private_key_from_jwk(load_issuer_private_jwk())
     claims = jwt.decode(
         token,
-        key=private_key.public_key(),
+        key=_get_public_key(),
         algorithms=["EdDSA"],
         issuer=settings.issuer_did,
         options={"require": ["exp", "iat", "nbf", "iss", "sub"]},
@@ -96,6 +108,24 @@ def verify_agent_credential(token: str) -> dict:
     if subject != claims.get("sub"):
         raise ValueError("credential subject id does not match sub")
     return claims
+
+
+def verify_agent_credential(token: str) -> dict:
+    """Verify a JWT VC and return its claims (sync wrapper for non-async callers)."""
+    return _verify_agent_credential_sync(token)
+
+
+async def verify_agent_credential_async(token: str) -> dict:
+    """Verify a JWT VC off the event loop via run_in_executor.
+
+    Ed25519 signature verification is CPU-bound (elliptic curve math).
+    Running it in the thread pool prevents blocking the async event loop
+    under high concurrency.
+    """
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, _verify_agent_credential_sync, token)
 
 
 def issue_session_assertion(

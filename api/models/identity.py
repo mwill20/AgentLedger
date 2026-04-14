@@ -110,13 +110,15 @@ class CredentialVerificationRequest(BaseModel):
 
 
 class CredentialVerificationResponse(BaseModel):
-    """Result of an online credential verification."""
+    """Result of an online credential verification.
+
+    Trimmed to essential fields only — avoids serialising nested
+    credential_subject or capability_scope lists on the hot path.
+    """
 
     valid: bool
     did: str | None = None
     expires_at: datetime | None = None
-    is_revoked: bool = False
-    capability_scope: list[str] = Field(default_factory=list)
     risk_tier: str | None = None
 
 

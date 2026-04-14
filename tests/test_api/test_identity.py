@@ -82,8 +82,6 @@ def test_post_identity_agents_verify_returns_status(client, monkeypatch):
         return CredentialVerificationResponse(
             valid=True,
             did="did:key:z6MkhYTestDid",
-            is_revoked=False,
-            capability_scope=["travel.*"],
             risk_tier="standard",
         )
 
