@@ -78,7 +78,7 @@ def test_post_identity_agents_register_returns_credential(
 def test_post_identity_agents_verify_returns_status(client, monkeypatch):
     """POST /v1/identity/agents/verify should return online verification status."""
 
-    async def fake_verify_agent_online(db, credential_jwt):
+    async def fake_verify_agent_online(db, credential_jwt, redis=None):
         return CredentialVerificationResponse(
             valid=True,
             did="did:key:z6MkhYTestDid",
@@ -131,7 +131,7 @@ def test_post_identity_agents_revoke_requires_admin_key(
     """POST /v1/identity/agents/{did}/revoke should require admin auth and return the revocation payload."""
     did_value = "did:key:z6MkhYTestDid"
 
-    async def fake_revoke_agent(db, did_value, request, revoked_by):
+    async def fake_revoke_agent(db, did_value, request, revoked_by, redis=None):
         return AgentRevokeResponse(
             did=did_value,
             revoked_at=datetime(2026, 4, 13, tzinfo=timezone.utc),

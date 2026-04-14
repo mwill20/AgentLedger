@@ -133,6 +133,7 @@ async def require_admin_api_key(
 async def require_bearer_credential(
     authorization: str | None = Header(default=None, alias="Authorization"),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ):
     """Authenticate a bearer JWT VC and return the current agent principal."""
     if not authorization:
@@ -151,4 +152,5 @@ async def require_bearer_credential(
     return await identity_service.authenticate_agent_credential(
         db=db,
         credential_jwt=token.strip(),
+        redis=redis,
     )

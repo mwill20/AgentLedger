@@ -64,9 +64,14 @@ async def register_agent_identity(
 async def verify_agent_identity(
     payload: CredentialVerificationRequest,
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> CredentialVerificationResponse:
     """Verify a presented agent credential."""
-    return await identity.verify_agent_online(db=db, credential_jwt=payload.credential_jwt)
+    return await identity.verify_agent_online(
+        db=db,
+        credential_jwt=payload.credential_jwt,
+        redis=redis,
+    )
 
 
 @router.get(
@@ -90,6 +95,7 @@ async def revoke_agent_identity(
     payload: AgentRevokeRequest,
     admin_api_key: str = Depends(require_admin_api_key),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> AgentRevokeResponse:
     """Admin revocation for a registered agent DID."""
     return await identity.revoke_agent(
@@ -97,6 +103,7 @@ async def revoke_agent_identity(
         did_value=did_value,
         request=payload,
         revoked_by=admin_api_key,
+        redis=redis,
     )
 
 

@@ -52,6 +52,11 @@ def _proof_payload(request: AgentRegistrationRequest) -> dict[str, Any]:
     }
 
 
+def _revocation_cache_key(did_value: str) -> str:
+    """Build the Redis cache key for one revoked agent DID."""
+    return "identity:revoked:" + sha256(did_value.encode("utf-8")).hexdigest()
+
+
 async def _store_proof_nonce(redis, did_value: str, nonce: str) -> None:
     """Best-effort proof nonce replay protection using Redis."""
     if redis is None:
@@ -71,6 +76,52 @@ async def _store_proof_nonce(redis, did_value: str, nonce: str) -> None:
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail="proof nonce has already been used",
         )
+
+
+async def _get_cached_revocation(redis, did_value: str) -> dict[str, Any] | None:
+    """Return cached revocation metadata for one DID when present."""
+    if redis is None:
+        return None
+    try:
+        cached = await redis.get(_revocation_cache_key(did_value))
+    except Exception:
+        return None
+    if cached is None:
+        return None
+    if isinstance(cached, dict):
+        return cached
+    if isinstance(cached, str):
+        try:
+            payload = json.loads(cached)
+        except json.JSONDecodeError:
+            return {"did": did_value}
+        if isinstance(payload, dict):
+            return payload
+    return {"did": did_value}
+
+
+async def _cache_revocation(
+    redis,
+    did_value: str,
+    revoked_at: datetime | None = None,
+    reason_code: str | None = None,
+) -> None:
+    """Best-effort Redis write for revoked agent credentials."""
+    if redis is None:
+        return
+    payload = {"did": did_value}
+    if revoked_at is not None:
+        payload["revoked_at"] = revoked_at.astimezone(timezone.utc).isoformat()
+    if reason_code:
+        payload["reason_code"] = reason_code
+    try:
+        await redis.set(
+            _revocation_cache_key(did_value),
+            json.dumps(payload, sort_keys=True),
+            ex=settings.revocation_cache_ttl_seconds,
+        )
+    except Exception:
+        return
 
 
 def _coerce_public_jwk(value: Any) -> dict[str, Any]:
@@ -231,6 +282,7 @@ async def register_agent(
 async def verify_agent_online(
     db: AsyncSession,
     credential_jwt: str,
+    redis=None,
 ) -> CredentialVerificationResponse:
     """Verify a JWT VC against issuer config and online revocation state."""
     _require_identity_runtime()
@@ -240,6 +292,14 @@ async def verify_agent_online(
         return CredentialVerificationResponse(valid=False)
 
     did_value = claims["sub"]
+    cached_revocation = await _get_cached_revocation(redis, did_value)
+    if cached_revocation is not None:
+        return CredentialVerificationResponse(
+            valid=False,
+            did=did_value,
+            is_revoked=True,
+        )
+
     result = await db.execute(
         text(
             """
@@ -255,6 +315,8 @@ async def verify_agent_online(
         return CredentialVerificationResponse(valid=False, did=did_value)
 
     is_valid = bool(row["is_active"]) and not bool(row["is_revoked"])
+    if bool(row["is_revoked"]):
+        await _cache_revocation(redis, did_value)
     if is_valid:
         try:
             await db.execute(
@@ -284,6 +346,7 @@ async def verify_agent_online(
 async def authenticate_agent_credential(
     db: AsyncSession,
     credential_jwt: str,
+    redis=None,
 ) -> AgentCredentialPrincipal:
     """Authenticate a bearer VC and return the current agent principal."""
     _require_identity_runtime()
@@ -296,6 +359,13 @@ async def authenticate_agent_credential(
         ) from exc
 
     did_value = claims["sub"]
+    cached_revocation = await _get_cached_revocation(redis, did_value)
+    if cached_revocation is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="agent credential is revoked",
+        )
+
     result = await db.execute(
         text(
             """
@@ -320,6 +390,7 @@ async def authenticate_agent_credential(
             detail="unknown bearer credential",
         )
     if row["is_revoked"]:
+        await _cache_revocation(redis, did_value)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="agent credential is revoked",
@@ -402,6 +473,7 @@ async def revoke_agent(
     did_value: str,
     request: AgentRevokeRequest,
     revoked_by: str,
+    redis=None,
 ) -> AgentRevokeResponse:
     """Revoke an agent identity and append a revocation event."""
     result = await db.execute(
@@ -478,6 +550,14 @@ async def revoke_agent(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"failed to revoke agent identity: {exc.__class__.__name__}",
         ) from exc
+
+    if revoked_at is not None:
+        await _cache_revocation(
+            redis,
+            did_value=did_value,
+            revoked_at=revoked_at,
+            reason_code=request.reason_code,
+        )
 
     return AgentRevokeResponse(
         did=did_value,

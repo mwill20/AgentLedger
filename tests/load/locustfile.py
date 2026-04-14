@@ -20,7 +20,15 @@ Profiles:
 - `search`
 - `manifests`
 - `service_detail`
+- `identity_verify`
+- `identity_lookup`
+- `identity_mixed`
 - `mixed`
+
+Identity profile prerequisites:
+- `identity_verify` requires `LOAD_CREDENTIAL_JWT`
+- `identity_lookup` requires `LOAD_AGENT_DID`
+- `identity_mixed` requires `LOAD_CREDENTIAL_JWT`; `LOAD_AGENT_DID`; optional `LOAD_ADMIN_API_KEY`
 """
 
 from __future__ import annotations
@@ -37,6 +45,8 @@ from locust import HttpUser, between, events, task
 
 API_KEY = os.environ.get("LOAD_API_KEY", "dev-local-only")
 HEADERS = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+ADMIN_API_KEY = os.environ.get("LOAD_ADMIN_API_KEY", API_KEY)
+ADMIN_HEADERS = {"X-API-Key": ADMIN_API_KEY, "Content-Type": "application/json"}
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 LOAD_PROFILE = os.environ.get("LOAD_PROFILE", "mixed").strip().lower()
 MANIFEST_POOL_SIZE = int(os.environ.get("MANIFEST_POOL_SIZE", "200"))
@@ -46,6 +56,8 @@ WAIT_MAX_SECONDS = float(os.environ.get("LOAD_WAIT_MAX_SECONDS", "0.5"))
 FLUSH_RATE_LIMITS = os.environ.get("LOAD_FLUSH_RATE_LIMITS", "1") != "0"
 SERVICE_DETAIL_ID = str(uuid5(NAMESPACE_DNS, "agentledger-perftest-service-0"))
 _QUERY = "book flights with fare comparison and seat selection"
+LOAD_CREDENTIAL_JWT = os.environ.get("LOAD_CREDENTIAL_JWT", "").strip()
+LOAD_AGENT_DID = os.environ.get("LOAD_AGENT_DID", "").strip()
 
 _flush_stop = threading.Event()
 _manifest_counter = count()
@@ -91,6 +103,13 @@ def _seed_perf_manifests(host: str) -> None:
         for index in range(min(SEED_COUNT, MANIFEST_POOL_SIZE)):
             response = client.post("/v1/manifests", json=_manifest_payload(index), headers=HEADERS)
             response.raise_for_status()
+
+
+def _require_identity_env(name: str, value: str) -> str:
+    """Require an env-backed identity fixture for identity load profiles."""
+    if not value:
+        raise RuntimeError(f"{name} must be set for LOAD_PROFILE={LOAD_PROFILE}")
+    return value
 
 
 def _flush_rate_limit_keys() -> None:
@@ -171,6 +190,31 @@ class AgentLedgerUser(HttpUser):
             name="/v1/services/{id}",
         )
 
+    @task
+    def verify_agent_credential(self):
+        credential = _require_identity_env("LOAD_CREDENTIAL_JWT", LOAD_CREDENTIAL_JWT)
+        self.client.post(
+            "/v1/identity/agents/verify",
+            json={"credential_jwt": credential},
+            name="/v1/identity/agents/verify",
+        )
+
+    @task
+    def get_agent_identity(self):
+        did_value = _require_identity_env("LOAD_AGENT_DID", LOAD_AGENT_DID)
+        self.client.get(
+            f"/v1/identity/agents/{did_value}",
+            name="/v1/identity/agents/{did_value}",
+        )
+
+    @task
+    def list_pending_authorizations(self):
+        self.client.get(
+            "/v1/authorization/pending",
+            headers=ADMIN_HEADERS,
+            name="/v1/authorization/pending",
+        )
+
 
 _PROFILE_TASKS = {
     "health": {AgentLedgerUser.health_check: 1},
@@ -179,6 +223,13 @@ _PROFILE_TASKS = {
     "search": {AgentLedgerUser.semantic_search: 1},
     "manifests": {AgentLedgerUser.register_manifest: 1},
     "service_detail": {AgentLedgerUser.get_service_detail: 1},
+    "identity_verify": {AgentLedgerUser.verify_agent_credential: 1},
+    "identity_lookup": {AgentLedgerUser.get_agent_identity: 1},
+    "identity_mixed": {
+        AgentLedgerUser.verify_agent_credential: 5,
+        AgentLedgerUser.get_agent_identity: 4,
+        AgentLedgerUser.list_pending_authorizations: 1,
+    },
     "mixed": {
         AgentLedgerUser.health_check: 3,
         AgentLedgerUser.get_ontology: 2,
