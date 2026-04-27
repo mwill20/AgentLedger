@@ -23,6 +23,7 @@ from api.services.ranker import (
     compute_reputation_score,
     compute_trust_score,
 )
+from . import trust
 
 SERVICE_DID_CACHE_TTL_SECONDS = 600
 
@@ -381,12 +382,6 @@ async def activate_service_identity(
                 has_active_service_identity=True,
             )
         )
-        trust_score = compute_trust_score(
-            capability_probe_score=capability_probe_score,
-            attestation_score=attestation_score,
-            operational_score=operational_score,
-            reputation_score=reputation_score,
-        )
 
         verified_at = datetime.now(timezone.utc)
         await db.execute(
@@ -394,7 +389,6 @@ async def activate_service_identity(
                 """
                 UPDATE services
                 SET public_key = :public_key,
-                    trust_score = :trust_score,
                     last_verified_at = :verified_at,
                     updated_at = NOW()
                 WHERE id = :service_id
@@ -403,7 +397,6 @@ async def activate_service_identity(
             {
                 "service_id": service_row["id"],
                 "public_key": manifest.public_key,
-                "trust_score": trust_score,
                 "verified_at": verified_at,
             },
         )
@@ -432,6 +425,10 @@ async def activate_service_identity(
                 ),
             },
         )
+        trust_snapshot = await trust.recompute_service_trust(
+            db=db,
+            service_id=str(service_row["id"]),
+        )
         await db.commit()
     except HTTPException:
         await db.rollback()
@@ -448,6 +445,6 @@ async def activate_service_identity(
         did=resolution.did,
         identity_status="active",
         attestation_score=attestation_score,
-        trust_score=trust_score,
+        trust_score=float(trust_snapshot["trust_score"]),
         verified_at=verified_at,
     )

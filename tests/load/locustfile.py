@@ -20,6 +20,7 @@ Profiles:
 - `search`
 - `manifests`
 - `service_detail`
+- `layer3`
 - `identity_verify`
 - `identity_lookup`
 - `identity_mixed`
@@ -55,12 +56,14 @@ WAIT_MIN_SECONDS = float(os.environ.get("LOAD_WAIT_MIN_SECONDS", "0.25"))
 WAIT_MAX_SECONDS = float(os.environ.get("LOAD_WAIT_MAX_SECONDS", "0.5"))
 FLUSH_RATE_LIMITS = os.environ.get("LOAD_FLUSH_RATE_LIMITS", "1") != "0"
 SERVICE_DETAIL_ID = str(uuid5(NAMESPACE_DNS, "agentledger-perftest-service-0"))
+LAYER3_SERVICE_ID = os.environ.get("LOAD_LAYER3_SERVICE_ID", SERVICE_DETAIL_ID).strip()
 _QUERY = "book flights with fare comparison and seat selection"
 LOAD_CREDENTIAL_JWT = os.environ.get("LOAD_CREDENTIAL_JWT", "").strip()
 LOAD_AGENT_DID = os.environ.get("LOAD_AGENT_DID", "").strip()
 
 _flush_stop = threading.Event()
 _manifest_counter = count()
+_SEEDING_PROFILES = {"manifests", "mixed", "service_detail"}
 
 
 def _manifest_payload(index: int) -> dict:
@@ -127,7 +130,7 @@ def _flush_rate_limit_keys() -> None:
 @events.test_start.add_listener
 def on_test_start(environment, **kwargs):
     """Seed deterministic perf data and start the rate-limit flusher."""
-    if environment.host:
+    if environment.host and LOAD_PROFILE in _SEEDING_PROFILES:
         _seed_perf_manifests(environment.host)
 
     if FLUSH_RATE_LIMITS:
@@ -191,6 +194,30 @@ class AgentLedgerUser(HttpUser):
         )
 
     @task
+    def layer3_chain_status(self):
+        self.client.get("/v1/chain/status", name="/v1/chain/status")
+
+    @task
+    def layer3_blocklist(self):
+        self.client.get("/v1/federation/blocklist", name="/v1/federation/blocklist")
+
+    @task
+    def layer3_attestations(self):
+        self.client.get(
+            f"/v1/attestations/{LAYER3_SERVICE_ID}",
+            headers=HEADERS,
+            name="/v1/attestations/{service_id}",
+        )
+
+    @task
+    def layer3_attestation_verify(self):
+        self.client.get(
+            f"/v1/attestations/{LAYER3_SERVICE_ID}/verify",
+            headers=HEADERS,
+            name="/v1/attestations/{service_id}/verify",
+        )
+
+    @task
     def verify_agent_credential(self):
         credential = _require_identity_env("LOAD_CREDENTIAL_JWT", LOAD_CREDENTIAL_JWT)
         self.client.post(
@@ -223,6 +250,12 @@ _PROFILE_TASKS = {
     "search": {AgentLedgerUser.semantic_search: 1},
     "manifests": {AgentLedgerUser.register_manifest: 1},
     "service_detail": {AgentLedgerUser.get_service_detail: 1},
+    "layer3": {
+        AgentLedgerUser.layer3_chain_status: 4,
+        AgentLedgerUser.layer3_blocklist: 3,
+        AgentLedgerUser.layer3_attestations: 2,
+        AgentLedgerUser.layer3_attestation_verify: 1,
+    },
     "identity_verify": {AgentLedgerUser.verify_agent_credential: 1},
     "identity_lookup": {AgentLedgerUser.get_agent_identity: 1},
     "identity_mixed": {

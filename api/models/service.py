@@ -105,6 +105,7 @@ class ServiceDetail(BaseModel):
     public_key: str | None = None
     trust_tier: int
     trust_score: float
+    attestation_score: float | None = None
     is_active: bool
     is_banned: bool
     ban_reason: str | None = None

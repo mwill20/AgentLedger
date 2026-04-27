@@ -37,6 +37,7 @@ from api.services.embedder import (
 from api.services import service_identity
 from api.services.typosquat import find_similar_domains
 from api.services.ranker import (
+    compute_attestation_score,
     compute_cost_score,
     compute_latency_score,
     compute_rank_score,
@@ -348,6 +349,21 @@ async def register_manifest(
                 "service_id": manifest.service_id,
                 "raw_json": raw_manifest_json,
                 "manifest_hash": manifest_hash,
+                "manifest_version": manifest.manifest_version,
+            },
+        )
+        from . import chain
+
+        await chain.record_chain_event(
+            db=db,
+            event_type="version",
+            service_id=manifest.service_id,
+            event_data={
+                "service_domain": manifest.domain,
+                "service_chain_id": chain.hash_identifier(manifest.domain),
+                "manifest_hash": (
+                    manifest_hash if manifest_hash.startswith("0x") else f"0x{manifest_hash}"
+                ),
                 "manifest_version": manifest.manifest_version,
             },
         )
@@ -808,6 +824,43 @@ async def get_service_detail(db: AsyncSession, service_id: UUID) -> ServiceDetai
     )
     operations_row = operations_result.mappings().first()
 
+    attestation_result = await db.execute(
+        text(
+            """
+            SELECT
+                ar.ontology_scope,
+                ar.recorded_at,
+                ar.expires_at,
+                a.did AS auditor_did
+            FROM attestation_records ar
+            JOIN auditors a
+                ON a.id = ar.auditor_id
+            WHERE ar.service_id = :service_id
+              AND ar.is_active = true
+              AND ar.is_confirmed = true
+              AND (ar.expires_at IS NULL OR ar.expires_at > NOW())
+              AND a.is_active = true
+            ORDER BY ar.recorded_at DESC
+            """
+        ),
+        {"service_id": service_id},
+    )
+    attestations = []
+    for row in attestation_result.mappings().all():
+        did_value = row["auditor_did"]
+        attestations.append(
+            {
+                "ontology_scope": row["ontology_scope"],
+                "recorded_at": row["recorded_at"],
+                "is_expired": False,
+                "auditor_org_id": did_value.rsplit(":", 1)[-1],
+            }
+        )
+    attestation_score = compute_attestation_score(
+        has_active_service_identity=False,
+        attestations=attestations,
+    )
+
     return ServiceDetail(
         service_id=service_row["service_id"],
         name=service_row["name"],
@@ -817,6 +870,7 @@ async def get_service_detail(db: AsyncSession, service_id: UUID) -> ServiceDetai
         public_key=service_row["public_key"],
         trust_tier=service_row["trust_tier"],
         trust_score=service_row["trust_score"],
+        attestation_score=attestation_score,
         is_active=service_row["is_active"],
         is_banned=service_row["is_banned"],
         ban_reason=service_row["ban_reason"],

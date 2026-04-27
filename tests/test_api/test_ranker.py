@@ -1,5 +1,7 @@
 """Unit tests for api.services.ranker — pure scoring functions."""
 
+from datetime import datetime, timedelta, timezone
+
 from api.services.ranker import (
     compute_attestation_score,
     compute_cost_score,
@@ -8,6 +10,7 @@ from api.services.ranker import (
     compute_reputation_score,
     compute_reliability_score,
     compute_trust_score,
+    evaluate_trust_tier_4,
     normalize_trust_score,
 )
 
@@ -79,6 +82,26 @@ class TestComputeAttestationScore:
     def test_inactive_identity_returns_zero(self):
         assert compute_attestation_score(False) == 0.0
 
+    def test_confirmed_attestations_take_precedence(self):
+        now = datetime(2026, 4, 14, tzinfo=timezone.utc)
+        score = compute_attestation_score(
+            True,
+            attestations=[
+                {
+                    "ontology_scope": "travel.*",
+                    "recorded_at": now - timedelta(days=30),
+                    "auditor_org_id": "auditfirm-one.example",
+                },
+                {
+                    "ontology_scope": "travel.air.book",
+                    "recorded_at": now - timedelta(days=60),
+                    "auditor_org_id": "auditfirm-two.example",
+                },
+            ],
+            now=now,
+        )
+        assert 0.7 <= score <= 1.0
+
 
 class TestComputeReputationScore:
     def test_zero_total_returns_zero(self):
@@ -86,6 +109,51 @@ class TestComputeReputationScore:
 
     def test_success_over_total(self):
         assert compute_reputation_score(8, 2) == 0.8
+
+    def test_blocklisted_forces_zero(self):
+        assert compute_reputation_score(8, 2, federated_score=1.0, is_blocklisted=True) == 0.0
+
+
+class TestEvaluateTrustTier4:
+    def test_requires_two_independent_auditors(self):
+        now = datetime(2026, 4, 14, tzinfo=timezone.utc)
+        assert evaluate_trust_tier_4(
+            [
+                {
+                    "ontology_scope": "travel.*",
+                    "recorded_at": now,
+                    "auditor_org_id": "auditfirm-one.example",
+                    "is_expired": False,
+                },
+                {
+                    "ontology_scope": "travel.air.book",
+                    "recorded_at": now,
+                    "auditor_org_id": "auditfirm-two.example",
+                    "is_expired": False,
+                },
+            ],
+            is_globally_revoked=False,
+        ) is True
+
+    def test_revoked_service_cannot_reach_tier_four(self):
+        now = datetime(2026, 4, 14, tzinfo=timezone.utc)
+        assert evaluate_trust_tier_4(
+            [
+                {
+                    "ontology_scope": "travel.*",
+                    "recorded_at": now,
+                    "auditor_org_id": "auditfirm-one.example",
+                    "is_expired": False,
+                },
+                {
+                    "ontology_scope": "travel.air.book",
+                    "recorded_at": now,
+                    "auditor_org_id": "auditfirm-two.example",
+                    "is_expired": False,
+                },
+            ],
+            is_globally_revoked=True,
+        ) is False
 
 
 class TestComputeRankScore:

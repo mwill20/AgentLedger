@@ -43,6 +43,17 @@ services:
       AUTHORIZATION_WEBHOOK_URL: ${AUTHORIZATION_WEBHOOK_URL:-}
       AUTHORIZATION_WEBHOOK_SECRET: ${AUTHORIZATION_WEBHOOK_SECRET:-}
       AUTHORIZATION_WEBHOOK_TIMEOUT_SECONDS: ${AUTHORIZATION_WEBHOOK_TIMEOUT_SECONDS:-3.0}
+      CHAIN_MODE: ${CHAIN_MODE:-auto}
+      CHAIN_NETWORK: ${CHAIN_NETWORK:-polygon-pos-local}
+      CHAIN_ID: ${CHAIN_ID:-137}
+      CHAIN_CONFIRMATION_BLOCKS: ${CHAIN_CONFIRMATION_BLOCKS:-20}
+      CHAIN_START_BLOCK: ${CHAIN_START_BLOCK:-0}
+      CHAIN_INDEX_WINDOW: ${CHAIN_INDEX_WINDOW:-2000}
+      WEB3_PROVIDER_URL: ${WEB3_PROVIDER_URL:-}
+      CHAIN_SIGNER_PRIVATE_KEY: ${CHAIN_SIGNER_PRIVATE_KEY:-}
+      ATTESTATION_LEDGER_CONTRACT_ADDRESS: ${ATTESTATION_LEDGER_CONTRACT_ADDRESS:-}
+      AUDIT_CHAIN_CONTRACT_ADDRESS: ${AUDIT_CHAIN_CONTRACT_ADDRESS:-}
+      AUDIT_ANCHOR_BATCH_SIZE: ${AUDIT_ANCHOR_BATCH_SIZE:-100}
       EMBEDDING_MODE: ${EMBEDDING_MODE:-model}
       UVICORN_WORKERS: ${UVICORN_WORKERS:-4}
     depends_on:
@@ -53,11 +64,22 @@ services:
 
   worker:
     build: .
-    command: celery -A crawler.worker:celery_app worker --loglevel=info --queues=celery,crawler
+    command: celery -A crawler.worker:celery_app worker --loglevel=info --pool=solo --queues=celery,crawler
     environment:
       DATABASE_URL: postgresql+asyncpg://agentledger:agentledger@db:5432/agentledger
       DATABASE_URL_SYNC: postgresql://agentledger:agentledger@db:5432/agentledger
       REDIS_URL: redis://redis:6379/0
+      CHAIN_MODE: ${CHAIN_MODE:-auto}
+      CHAIN_NETWORK: ${CHAIN_NETWORK:-polygon-pos-local}
+      CHAIN_ID: ${CHAIN_ID:-137}
+      CHAIN_CONFIRMATION_BLOCKS: ${CHAIN_CONFIRMATION_BLOCKS:-20}
+      CHAIN_START_BLOCK: ${CHAIN_START_BLOCK:-0}
+      CHAIN_INDEX_WINDOW: ${CHAIN_INDEX_WINDOW:-2000}
+      WEB3_PROVIDER_URL: ${WEB3_PROVIDER_URL:-}
+      CHAIN_SIGNER_PRIVATE_KEY: ${CHAIN_SIGNER_PRIVATE_KEY:-}
+      ATTESTATION_LEDGER_CONTRACT_ADDRESS: ${ATTESTATION_LEDGER_CONTRACT_ADDRESS:-}
+      AUDIT_CHAIN_CONTRACT_ADDRESS: ${AUDIT_CHAIN_CONTRACT_ADDRESS:-}
+      AUDIT_ANCHOR_BATCH_SIZE: ${AUDIT_ANCHOR_BATCH_SIZE:-100}
     depends_on:
       db:
         condition: service_healthy
@@ -71,6 +93,17 @@ services:
       DATABASE_URL: postgresql+asyncpg://agentledger:agentledger@db:5432/agentledger
       DATABASE_URL_SYNC: postgresql://agentledger:agentledger@db:5432/agentledger
       REDIS_URL: redis://redis:6379/0
+      CHAIN_MODE: ${CHAIN_MODE:-auto}
+      CHAIN_NETWORK: ${CHAIN_NETWORK:-polygon-pos-local}
+      CHAIN_ID: ${CHAIN_ID:-137}
+      CHAIN_CONFIRMATION_BLOCKS: ${CHAIN_CONFIRMATION_BLOCKS:-20}
+      CHAIN_START_BLOCK: ${CHAIN_START_BLOCK:-0}
+      CHAIN_INDEX_WINDOW: ${CHAIN_INDEX_WINDOW:-2000}
+      WEB3_PROVIDER_URL: ${WEB3_PROVIDER_URL:-}
+      CHAIN_SIGNER_PRIVATE_KEY: ${CHAIN_SIGNER_PRIVATE_KEY:-}
+      ATTESTATION_LEDGER_CONTRACT_ADDRESS: ${ATTESTATION_LEDGER_CONTRACT_ADDRESS:-}
+      AUDIT_CHAIN_CONTRACT_ADDRESS: ${AUDIT_CHAIN_CONTRACT_ADDRESS:-}
+      AUDIT_ANCHOR_BATCH_SIZE: ${AUDIT_ANCHOR_BATCH_SIZE:-100}
     depends_on:
       db:
         condition: service_healthy

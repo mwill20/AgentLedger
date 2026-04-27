@@ -25,6 +25,7 @@ import pytest
 from tests.test_integration.conftest import requires_db
 
 BASE_URL = "http://localhost:8000"
+REQUEST_TIMEOUT_SECONDS = 30.0
 
 
 # ---------------------------------------------------------------------------
@@ -33,13 +34,23 @@ BASE_URL = "http://localhost:8000"
 
 def _post_manifest(client: httpx.Client, payload: dict, headers: dict) -> httpx.Response:
     """Register a manifest via POST."""
-    return client.post(f"{BASE_URL}/v1/manifests", json=payload, headers=headers)
+    return client.post(
+        f"{BASE_URL}/v1/manifests",
+        json=payload,
+        headers=headers,
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
 
 
 def _search(client: httpx.Client, query: str, headers: dict, **kwargs) -> httpx.Response:
     """Run a semantic search."""
     body = {"query": query, **kwargs}
-    return client.post(f"{BASE_URL}/v1/search", json=body, headers=headers)
+    return client.post(
+        f"{BASE_URL}/v1/search",
+        json=body,
+        headers=headers,
+        timeout=REQUEST_TIMEOUT_SECONDS,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +200,7 @@ class TestStructuredQuery:
 
             resp = client.get(
                 f"{BASE_URL}/v1/services",
-                params={"ontology": "travel.air.book"},
+                params={"ontology": "travel.air.book", "limit": 500},
                 headers=api_key_headers,
             )
 

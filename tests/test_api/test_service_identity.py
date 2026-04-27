@@ -231,6 +231,15 @@ def test_activate_service_identity_updates_trust_score(monkeypatch):
         "validate_signed_manifest",
         fake_validate_signed_manifest,
     )
+    
+    async def fake_recompute_service_trust(db, service_id):
+        return {"trust_score": 62.5}
+
+    monkeypatch.setattr(
+        service_identity.trust,
+        "recompute_service_trust",
+        fake_recompute_service_trust,
+    )
 
     result = asyncio.run(
         service_identity.activate_service_identity(

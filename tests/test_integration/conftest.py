@@ -125,12 +125,18 @@ def sample_manifest(unique_id) -> dict:
             {
                 "id": "cap-1",
                 "ontology_tag": "travel.air.book",
-                "description": "Book flights to major cities with instant confirmation and seat selection.",
+                "description": (
+                    f"Book flights to major cities with instant confirmation and "
+                    f"seat selection for integration marker {unique_id[:8]}."
+                ),
             },
             {
                 "id": "cap-2",
                 "ontology_tag": "travel.air.search",
-                "description": "Search for available flights by route date and passenger count worldwide.",
+                "description": (
+                    f"Search for available flights by route date and passenger count "
+                    f"worldwide for integration marker {unique_id[:8]}."
+                ),
             },
         ],
         "pricing": {"model": "per_transaction"},

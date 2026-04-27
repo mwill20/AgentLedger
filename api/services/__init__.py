@@ -1,27 +1,43 @@
 """Service-layer exports."""
 
 from api.services import (
+    attestation,
+    audit,
+    auditor,
     credentials,
+    chain,
     authorization,
     did,
     embedder,
+    federation,
     identity,
+    merkle,
     ranker,
     registry,
     service_identity,
+    sse,
     sessions,
+    trust,
     verifier,
 )
 
 __all__ = [
     "authorization",
+    "attestation",
+    "audit",
+    "auditor",
+    "chain",
     "credentials",
     "did",
     "embedder",
+    "federation",
     "identity",
+    "merkle",
     "ranker",
     "registry",
     "service_identity",
+    "sse",
     "sessions",
+    "trust",
     "verifier",
 ]

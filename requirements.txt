@@ -30,3 +30,4 @@ pytest-cov==7.1.0
 python-dotenv==1.1.0
 cryptography==44.0.2
 PyJWT==2.9.0
+web3==6.20.1

@@ -234,11 +234,15 @@ class TestCacheHelpers:
 # ---------------------------------------------------------------------------
 
 class TestSchedulerConstants:
-    def test_schedule_has_four_tasks(self):
+    def test_schedule_has_layer_three_tasks(self):
         from crawler.scheduler import CRAWL_SCHEDULE
 
-        assert len(CRAWL_SCHEDULE) == 4
+        assert len(CRAWL_SCHEDULE) == 8
         assert "crawl-all-active-services" in CRAWL_SCHEDULE
         assert "verify-all-pending-domains" in CRAWL_SCHEDULE
         assert "expire-identity-records" in CRAWL_SCHEDULE
         assert "revalidate-service-identity" in CRAWL_SCHEDULE
+        assert "index-chain-events" in CRAWL_SCHEDULE
+        assert "confirm-chain-events" in CRAWL_SCHEDULE
+        assert "anchor-audit-batch" in CRAWL_SCHEDULE
+        assert "push-revocations" in CRAWL_SCHEDULE

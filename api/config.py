@@ -34,6 +34,19 @@ class Settings(BaseSettings):
     authorization_webhook_secret: str = ""
     authorization_webhook_timeout_seconds: float = 3.0
 
+    # Trust / Layer 3
+    chain_mode: str = "auto"
+    chain_network: str = "polygon-pos-local"
+    chain_id: int = 137
+    chain_confirmation_blocks: int = 20
+    chain_start_block: int = 0
+    chain_index_window: int = 2000
+    web3_provider_url: str = ""
+    chain_signer_private_key: str = ""
+    attestation_ledger_contract_address: str = ""
+    audit_chain_contract_address: str = ""
+    audit_anchor_batch_size: int = 100
+
     # Embeddings: "model" = sentence-transformers (GPU/prod), "hash" = fast fallback (CPU/CI/load-test)
     embedding_mode: str = "model"
 

@@ -1,0 +1,19 @@
+{
+  "name": "agentledger-layer3-contracts",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Hardhat workspace for AgentLedger Layer 3 contracts",
+  "scripts": {
+    "contracts:test": "hardhat test",
+    "contracts:compile": "hardhat compile",
+    "contracts:deploy:mumbai": "hardhat run contracts/scripts/deploy.js --network polygonMumbai",
+    "contracts:deploy:polygon": "hardhat run contracts/scripts/deploy.js --network polygon"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts-upgradeable": "^5.0.2",
+    "@openzeppelin/hardhat-upgrades": "^3.2.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.6"
+  }
+}

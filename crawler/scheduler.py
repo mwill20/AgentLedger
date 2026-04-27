@@ -26,4 +26,20 @@ CRAWL_SCHEDULE = {
         "task": "crawler.revalidate_service_identity",
         "schedule": 60 * 60 * 24,  # every 24 hours
     },
+    "index-chain-events": {
+        "task": "crawler.index_chain_events",
+        "schedule": 5,  # every 5 seconds
+    },
+    "confirm-chain-events": {
+        "task": "crawler.confirm_chain_events",
+        "schedule": 5,  # every 5 seconds
+    },
+    "anchor-audit-batch": {
+        "task": "crawler.anchor_audit_batch",
+        "schedule": 60,  # every minute
+    },
+    "push-revocations": {
+        "task": "crawler.push_revocations",
+        "schedule": 60,  # every minute
+    },
 }
