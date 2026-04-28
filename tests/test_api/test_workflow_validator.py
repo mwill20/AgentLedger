@@ -334,7 +334,7 @@ def test_validation_decision_route_returns_updated_workflow(
     """PUT /workflows/{id}/validation should expose the updated workflow."""
     workflow_id = uuid4()
 
-    async def fake_decision(db, workflow_id, request):
+    async def fake_decision(db, workflow_id, request, redis=None):
         row = {
             **_workflow_row(workflow_id),
             "status": "published",

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import fnmatch
 import json
+from hashlib import sha256
 from collections.abc import Mapping
 from typing import Any
 from uuid import UUID, uuid4
@@ -26,6 +28,173 @@ from api.models.workflow import (
 
 VALIDATION_QUEUE_DID = "did:agentledger:validation-queue"
 ESTIMATED_REVIEW_HOURS = 48
+WORKFLOW_CACHE_TTL_SECONDS = 60
+WORKFLOW_QUERY_RATE_LIMIT_PER_MINUTE = 200
+WORKFLOW_QUERY_RATE_LIMIT_WINDOW_SECONDS = 60
+
+
+def workflow_detail_cache_key(workflow_id: UUID) -> str:
+    """Build the Redis key for one workflow detail response."""
+    return f"workflow:detail:{workflow_id}"
+
+
+def workflow_slug_cache_key(slug: str) -> str:
+    """Build the Redis key for one slug-addressed workflow detail response."""
+    return f"workflow:slug:{slug}"
+
+
+def workflow_list_cache_key(
+    *,
+    domain: str | None,
+    tags: list[str] | None,
+    status_filter: str,
+    quality_min: float | None,
+    limit: int,
+    offset: int,
+) -> str:
+    """Build a list cache key that preserves all supported query variants."""
+    payload = {
+        "domain": domain.upper() if domain else None,
+        "tags": sorted(tags or []),
+        "status": status_filter,
+        "quality_min": quality_min,
+        "limit": limit,
+        "offset": offset,
+    }
+    digest = sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+    return f"workflow:list:{digest}"
+
+
+async def _cache_get_model(redis, cache_key: str, model_cls):
+    """Best-effort Redis read for cached Pydantic workflow models."""
+    if redis is None:
+        return None
+    try:
+        cached = await redis.get(cache_key)
+    except Exception:
+        return None
+    if not cached:
+        return None
+    try:
+        return model_cls.model_validate_json(cached)
+    except Exception:
+        return None
+
+
+async def _cache_set_model(redis, cache_key: str, value: Any) -> None:
+    """Best-effort Redis write for cached Pydantic workflow models."""
+    if redis is None:
+        return
+    try:
+        await redis.set(
+            cache_key,
+            value.model_dump_json(),
+            ex=WORKFLOW_CACHE_TTL_SECONDS,
+        )
+    except Exception:
+        return
+
+
+def _normalize_cache_key(key: Any) -> str:
+    """Normalize Redis key values from real clients and local test doubles."""
+    if isinstance(key, bytes):
+        return key.decode("utf-8")
+    return str(key)
+
+
+async def _matching_cache_keys(redis, pattern: str) -> list[Any]:
+    """Return Redis keys matching a pattern using the best available API."""
+    if redis is None:
+        return []
+    try:
+        if hasattr(redis, "scan_iter"):
+            keys = []
+            async for key in redis.scan_iter(match=pattern):
+                keys.append(key)
+            return keys
+        if hasattr(redis, "keys"):
+            return list(await redis.keys(pattern))
+        if hasattr(redis, "store"):
+            return [
+                key
+                for key in list(redis.store)
+                if fnmatch.fnmatch(_normalize_cache_key(key), pattern)
+            ]
+    except Exception:
+        return []
+    return []
+
+
+async def _delete_cache_keys(redis, keys: list[Any]) -> None:
+    """Delete Redis keys while tolerating test doubles and Redis failures."""
+    if redis is None or not keys:
+        return
+    try:
+        if hasattr(redis, "delete"):
+            await redis.delete(*keys)
+            return
+        if hasattr(redis, "store"):
+            for key in keys:
+                redis.store.pop(key, None)
+    except Exception:
+        return
+
+
+async def invalidate_workflow_caches(
+    redis,
+    *,
+    workflow_id: UUID | None = None,
+    slug: str | None = None,
+) -> None:
+    """Best-effort invalidation for workflow read caches."""
+    if redis is None:
+        return
+    keys: list[Any] = []
+    if workflow_id is not None:
+        keys.append(workflow_detail_cache_key(workflow_id))
+    if slug:
+        keys.append(workflow_slug_cache_key(slug))
+    else:
+        keys.extend(await _matching_cache_keys(redis, "workflow:slug:*"))
+    keys.extend(await _matching_cache_keys(redis, "workflow:list:*"))
+    await _delete_cache_keys(redis, keys)
+
+
+async def enforce_workflow_query_rate_limit(redis, api_key: str) -> None:
+    """Apply the Layer 5 workflow query rate limit per API key.
+
+    Redis outages fail open so workflow discovery remains available.
+    """
+    if redis is None:
+        return
+    cache_key = f"workflow:query:rate:{sha256(api_key.encode('utf-8')).hexdigest()}"
+    try:
+        count = await redis.incr(cache_key)
+        if int(count) == 1:
+            await redis.expire(cache_key, WORKFLOW_QUERY_RATE_LIMIT_WINDOW_SECONDS)
+        if int(count) <= WORKFLOW_QUERY_RATE_LIMIT_PER_MINUTE:
+            return
+        retry_after = WORKFLOW_QUERY_RATE_LIMIT_WINDOW_SECONDS
+        if hasattr(redis, "ttl"):
+            ttl_value = await redis.ttl(cache_key)
+            if isinstance(ttl_value, int) and ttl_value > 0:
+                retry_after = ttl_value
+    except AttributeError:
+        return
+    except HTTPException:
+        raise
+    except Exception:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail={
+            "error": "workflow query rate limit exceeded",
+            "limit": WORKFLOW_QUERY_RATE_LIMIT_PER_MINUTE,
+            "window_seconds": WORKFLOW_QUERY_RATE_LIMIT_WINDOW_SECONDS,
+            "retry_after_seconds": retry_after,
+        },
+    )
 
 
 async def _ensure_author_exists(db: AsyncSession, author_did: str) -> None:
@@ -643,8 +812,14 @@ async def _get_workflow_row_by_slug(
 async def get_workflow(
     db: AsyncSession,
     workflow_id: UUID,
+    redis=None,
 ) -> WorkflowRecord:
     """Return full workflow detail by id."""
+    cache_key = workflow_detail_cache_key(workflow_id)
+    cached = await _cache_get_model(redis, cache_key, WorkflowRecord)
+    if cached is not None:
+        return cached
+
     workflow_row = await _get_workflow_row_by_id(db, workflow_id)
     if workflow_row is None:
         raise HTTPException(
@@ -652,14 +827,23 @@ async def get_workflow(
             detail="workflow not found",
         )
     step_rows = await _get_steps_for_workflow(db, workflow_row["id"])
-    return _to_workflow_record(workflow_row, step_rows)
+    response = _to_workflow_record(workflow_row, step_rows)
+    await _cache_set_model(redis, cache_key, response)
+    await _cache_set_model(redis, workflow_slug_cache_key(response.slug), response)
+    return response
 
 
 async def get_workflow_by_slug(
     db: AsyncSession,
     slug: str,
+    redis=None,
 ) -> WorkflowRecord:
     """Return full workflow detail by slug."""
+    cache_key = workflow_slug_cache_key(slug)
+    cached = await _cache_get_model(redis, cache_key, WorkflowRecord)
+    if cached is not None:
+        return cached
+
     workflow_row = await _get_workflow_row_by_slug(db, slug)
     if workflow_row is None:
         raise HTTPException(
@@ -667,7 +851,10 @@ async def get_workflow_by_slug(
             detail="workflow not found",
         )
     step_rows = await _get_steps_for_workflow(db, workflow_row["id"])
-    return _to_workflow_record(workflow_row, step_rows)
+    response = _to_workflow_record(workflow_row, step_rows)
+    await _cache_set_model(redis, cache_key, response)
+    await _cache_set_model(redis, workflow_detail_cache_key(response.workflow_id), response)
+    return response
 
 
 async def list_workflows(
@@ -679,8 +866,21 @@ async def list_workflows(
     quality_min: float | None = None,
     limit: int = 50,
     offset: int = 0,
+    redis=None,
 ) -> WorkflowListResponse:
     """List workflows with optional filters."""
+    cache_key = workflow_list_cache_key(
+        domain=domain,
+        tags=tags,
+        status_filter=status_filter,
+        quality_min=quality_min,
+        limit=limit,
+        offset=offset,
+    )
+    cached = await _cache_get_model(redis, cache_key, WorkflowListResponse)
+    if cached is not None:
+        return cached
+
     count_where: list[str] = ["status = :status"]
     list_where: list[str] = ["w.status = :status"]
     params: dict[str, Any] = {
@@ -738,12 +938,101 @@ async def list_workflows(
         params,
     )
 
-    return WorkflowListResponse(
+    response = WorkflowListResponse(
         total=total,
         limit=limit,
         offset=offset,
         workflows=[_to_summary(row) for row in result.mappings().all()],
     )
+    await _cache_set_model(redis, cache_key, response)
+    return response
+
+
+async def flag_workflows_for_revoked_service(
+    db: AsyncSession,
+    service_id: UUID,
+    redis=None,
+) -> list[UUID]:
+    """Flag published workflows with required pinned revoked steps for re-validation."""
+    try:
+        result = await db.execute(
+            text(
+                """
+                SELECT DISTINCT
+                    w.id,
+                    w.slug,
+                    w.ontology_domain
+                FROM workflows w
+                JOIN workflow_steps ws ON ws.workflow_id = w.id
+                WHERE ws.service_id = :service_id
+                  AND ws.is_required = true
+                  AND w.status = 'published'
+                """
+            ),
+            {"service_id": service_id},
+        )
+        rows = list(result.mappings().all())
+        if not rows:
+            return []
+
+        workflow_ids = [row["id"] for row in rows]
+        await db.execute(
+            text(
+                """
+                UPDATE workflows
+                SET status = 'in_review',
+                    updated_at = NOW()
+                WHERE id = ANY(CAST(:workflow_ids AS UUID[]))
+                """
+            ),
+            {"workflow_ids": workflow_ids},
+        )
+        for row in rows:
+            await db.execute(
+                text(
+                    """
+                    INSERT INTO workflow_validations (
+                        workflow_id,
+                        validator_did,
+                        validator_domain,
+                        checklist,
+                        created_at
+                    )
+                    SELECT
+                        :workflow_id,
+                        :validator_did,
+                        :validator_domain,
+                        '{}'::jsonb,
+                        NOW()
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM workflow_validations
+                        WHERE workflow_id = :workflow_id
+                          AND decision IS NULL
+                    )
+                    """
+                ),
+                {
+                    "workflow_id": row["id"],
+                    "validator_did": VALIDATION_QUEUE_DID,
+                    "validator_domain": row["ontology_domain"],
+                },
+            )
+        await db.commit()
+    except SQLAlchemyError as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"failed to flag workflows for re-validation: {exc.__class__.__name__}",
+        ) from exc
+
+    for row in rows:
+        await invalidate_workflow_caches(
+            redis,
+            workflow_id=row["id"],
+            slug=row["slug"],
+        )
+    return workflow_ids
 
 
 async def _verify_context_bundle(
@@ -783,116 +1072,12 @@ async def report_execution(
     request: ExecutionReportRequest,
     redis=None,
 ) -> ExecutionReportResponse:
-    """Record an execution outcome, update counters, and recompute quality score."""
-    from api.services.workflow_ranker import compute_workflow_quality_score
+    """Compatibility wrapper around the dedicated workflow executor service."""
+    from api.services import workflow_executor
 
-    try:
-        workflow_row = await _get_workflow_row_by_id(db, workflow_id)
-        if workflow_row is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="workflow not found",
-            )
-        if workflow_row["status"] != "published":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="execution outcomes can only be reported for published workflows",
-            )
-
-        verified = await _verify_context_bundle(
-            db=db,
-            workflow_id=workflow_id,
-            agent_did=request.agent_did,
-            context_bundle_id=request.context_bundle_id,
-        )
-
-        result = await db.execute(
-            text(
-                """
-                INSERT INTO workflow_executions (
-                    workflow_id,
-                    agent_did,
-                    context_bundle_id,
-                    outcome,
-                    steps_completed,
-                    steps_total,
-                    failure_step_number,
-                    failure_reason,
-                    duration_ms,
-                    verified,
-                    verified_at,
-                    reported_at,
-                    created_at
-                )
-                VALUES (
-                    :workflow_id,
-                    :agent_did,
-                    :context_bundle_id,
-                    :outcome,
-                    :steps_completed,
-                    :steps_total,
-                    :failure_step_number,
-                    :failure_reason,
-                    :duration_ms,
-                    :verified,
-                    CASE WHEN :verified THEN NOW() ELSE NULL END,
-                    NOW(),
-                    NOW()
-                )
-                RETURNING id
-                """
-            ),
-            {
-                "workflow_id": workflow_id,
-                "agent_did": request.agent_did,
-                "context_bundle_id": request.context_bundle_id,
-                "outcome": request.outcome,
-                "steps_completed": request.steps_completed,
-                "steps_total": request.steps_total,
-                "failure_step_number": request.failure_step_number,
-                "failure_reason": request.failure_reason,
-                "duration_ms": request.duration_ms,
-                "verified": verified,
-            },
-        )
-        execution_id = result.scalar_one()
-
-        if request.outcome == "success":
-            counter_sql = """
-                UPDATE workflows
-                SET execution_count = execution_count + 1,
-                    success_count = success_count + 1,
-                    updated_at = NOW()
-                WHERE id = :workflow_id
-            """
-        else:
-            counter_sql = """
-                UPDATE workflows
-                SET execution_count = execution_count + 1,
-                    failure_count = failure_count + 1,
-                    updated_at = NOW()
-                WHERE id = :workflow_id
-            """
-        await db.execute(text(counter_sql), {"workflow_id": workflow_id})
-        await db.commit()
-    except HTTPException:
-        await db.rollback()
-        raise
-    except SQLAlchemyError as exc:
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"failed to report execution: {exc.__class__.__name__}",
-        ) from exc
-
-    quality_score = await compute_workflow_quality_score(
+    return await workflow_executor.report_execution_from_request(
         workflow_id=workflow_id,
+        request=request,
         db=db,
         redis=redis,
-    )
-
-    return ExecutionReportResponse(
-        execution_id=execution_id,
-        verified=verified,
-        quality_score=quality_score,
     )

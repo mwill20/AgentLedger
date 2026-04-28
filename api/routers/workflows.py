@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.dependencies import get_db, get_redis, require_admin_api_key, require_api_key
@@ -24,6 +24,7 @@ from api.models.workflow import (
 )
 from api.services import (
     workflow_context,
+    workflow_executor,
     workflow_ranker,
     workflow_registry,
     workflow_validator,
@@ -81,9 +82,10 @@ async def list_workflows(
     offset: int = Query(default=0, ge=0),
     api_key: str = Depends(require_api_key),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> WorkflowListResponse:
     """List workflows with optional filters."""
-    del api_key
+    await workflow_registry.enforce_workflow_query_rate_limit(redis, api_key)
     return await workflow_registry.list_workflows(
         db=db,
         domain=domain,
@@ -92,6 +94,7 @@ async def list_workflows(
         quality_min=quality_min,
         limit=limit,
         offset=offset,
+        redis=redis,
     )
 
 
@@ -100,10 +103,15 @@ async def get_workflow_by_slug(
     slug: str,
     api_key: str = Depends(require_api_key),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> WorkflowRecord:
     """Retrieve a workflow by slug."""
-    del api_key
-    return await workflow_registry.get_workflow_by_slug(db=db, slug=slug)
+    await workflow_registry.enforce_workflow_query_rate_limit(redis, api_key)
+    return await workflow_registry.get_workflow_by_slug(
+        db=db,
+        slug=slug,
+        redis=redis,
+    )
 
 
 @router.post(
@@ -156,7 +164,7 @@ async def rank_workflow(
     redis=Depends(get_redis),
 ) -> WorkflowRankResponse:
     """Return ranked service candidates for each workflow step."""
-    del api_key
+    await workflow_registry.enforce_workflow_query_rate_limit(redis, api_key)
     return await workflow_ranker.get_workflow_rank(
         workflow_id=workflow_id,
         geo=geo,
@@ -172,10 +180,15 @@ async def get_workflow(
     workflow_id: UUID,
     api_key: str = Depends(require_api_key),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> WorkflowRecord:
     """Retrieve a workflow by UUID."""
-    del api_key
-    return await workflow_registry.get_workflow(db=db, workflow_id=workflow_id)
+    await workflow_registry.enforce_workflow_query_rate_limit(redis, api_key)
+    return await workflow_registry.get_workflow(
+        db=db,
+        workflow_id=workflow_id,
+        redis=redis,
+    )
 
 
 @router.post(
@@ -186,17 +199,19 @@ async def get_workflow(
 async def report_workflow_execution(
     workflow_id: UUID,
     payload: ExecutionReportRequest,
+    background_tasks: BackgroundTasks,
     api_key: str = Depends(require_api_key),
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),
 ) -> ExecutionReportResponse:
     """Report a workflow execution outcome and update quality signals."""
     del api_key
-    return await workflow_registry.report_execution(
-        db=db,
+    return await workflow_executor.report_execution_from_request(
         workflow_id=workflow_id,
         request=payload,
+        db=db,
         redis=redis,
+        background_tasks=background_tasks,
     )
 
 
@@ -222,6 +237,7 @@ async def record_workflow_validation(
     payload: ValidatorDecisionRequest,
     api_key: str = Depends(require_api_key),
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> WorkflowRecord:
     """Record a validator decision for a workflow."""
     del api_key
@@ -229,4 +245,5 @@ async def record_workflow_validation(
         db=db,
         workflow_id=workflow_id,
         request=payload,
+        redis=redis,
     )

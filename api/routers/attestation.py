@@ -5,7 +5,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.dependencies import get_db, require_api_key
+from api.dependencies import get_db, get_redis, require_api_key
 from api.models.layer3 import (
     AttestationCreateRequest,
     AttestationCreateResponse,
@@ -73,9 +73,10 @@ async def create_attestation(
 async def create_revocation(
     payload: RevocationCreateRequest,
     db: AsyncSession = Depends(get_db),
+    redis=Depends(get_redis),
 ) -> RevocationCreateResponse:
     """Submit one Layer 3 service revocation."""
-    return await attestation.submit_revocation(db=db, request=payload)
+    return await attestation.submit_revocation(db=db, request=payload, redis=redis)
 
 
 @router.get("/attestations/{service_id}", response_model=list[AttestationRecord])

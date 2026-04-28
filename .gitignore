@@ -28,9 +28,14 @@ env/
 # Node
 node_modules/
 
+# Hardhat generated output
+contracts/artifacts/
+contracts/cache/
+
 # IDE
 .vscode/
 .idea/
+*.code-workspace
 *.swp
 *.swo
 

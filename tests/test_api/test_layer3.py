@@ -165,7 +165,7 @@ def test_post_attestations_returns_tx_metadata(client, api_key_headers, monkeypa
 def test_post_attestations_revoke_returns_tx_metadata(client, api_key_headers, monkeypatch):
     """POST /v1/attestations/revoke should return revocation tx metadata."""
 
-    async def fake_submit_revocation(db, request):
+    async def fake_submit_revocation(db, request, redis=None):
         return {
             "revocation_id": str(uuid4()),
             "tx_hash": "0xdef456",

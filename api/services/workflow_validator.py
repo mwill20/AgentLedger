@@ -273,6 +273,7 @@ async def record_validator_decision(
     db: AsyncSession,
     workflow_id: UUID,
     request: ValidatorDecisionRequest,
+    redis=None,
 ) -> WorkflowRecord:
     """Record a validator decision and transition workflow state."""
     try:
@@ -371,6 +372,11 @@ async def record_validator_decision(
                 {"workflow_id": workflow_id, "status": workflow_status},
             )
         await db.commit()
+        if request.decision == "approved":
+            await workflow_registry.invalidate_workflow_caches(
+                redis,
+                workflow_id=workflow_id,
+            )
     except HTTPException:
         await db.rollback()
         raise
@@ -381,4 +387,8 @@ async def record_validator_decision(
             detail=f"failed to record validator decision: {exc.__class__.__name__}",
         ) from exc
 
-    return await workflow_registry.get_workflow(db=db, workflow_id=workflow_id)
+    return await workflow_registry.get_workflow(
+        db=db,
+        workflow_id=workflow_id,
+        redis=redis,
+    )

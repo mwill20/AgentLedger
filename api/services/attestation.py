@@ -21,7 +21,7 @@ from api.models.layer3 import (
     RevocationCreateRequest,
     RevocationCreateResponse,
 )
-from . import chain, ranker, runtime_cache
+from . import chain, ranker, runtime_cache, workflow_registry
 
 
 _ATTESTATION_READ_TTL_SECONDS = 2.0
@@ -329,6 +329,7 @@ async def verify_service_attestations(
 async def submit_revocation(
     db: AsyncSession,
     request: RevocationCreateRequest,
+    redis=None,
 ) -> RevocationCreateResponse:
     """Submit one service revocation from an active auditor."""
     try:
@@ -402,6 +403,11 @@ async def submit_revocation(
         runtime_cache.invalidate_prefix(f"attestations:{service_row['id']}")
         runtime_cache.invalidate_prefix(f"attestation-verify:{service_row['id']}")
         runtime_cache.invalidate_prefix("blocklist:")
+        await workflow_registry.flag_workflows_for_revoked_service(
+            db=db,
+            service_id=service_row["id"],
+            redis=redis,
+        )
     except HTTPException:
         await db.rollback()
         raise

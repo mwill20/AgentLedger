@@ -436,7 +436,7 @@ class ExecutionReportRequest(_SanitizedModel):
 
     agent_did: str = Field(min_length=8, max_length=500)
     context_bundle_id: UUID | None = None
-    outcome: Literal["success", "failure"]
+    outcome: Literal["success", "partial", "failure"]
     steps_completed: int = Field(ge=0)
     steps_total: int = Field(ge=1)
     failure_step_number: int | None = Field(default=None, ge=1)

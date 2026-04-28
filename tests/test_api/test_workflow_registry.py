@@ -384,7 +384,7 @@ def test_get_workflows_slug_route_returns_full_detail(client, api_key_headers, m
     """GET /v1/workflows/slug/{slug} should return the workflow detail model."""
     workflow_id = uuid4()
 
-    async def fake_get_by_slug(db, slug):
+    async def fake_get_by_slug(db, slug, redis=None):
         assert slug == "business-travel-booking"
         return _workflow_record(workflow_id)
 
@@ -423,6 +423,7 @@ def test_list_workflows_route_returns_paginated_summaries(
         quality_min=None,
         limit=50,
         offset=0,
+        redis=None,
     ):
         assert domain == "TRAVEL"
         assert tags == ["travel.air.book", "travel.lodging.book"]
@@ -484,7 +485,15 @@ def test_report_execution_returns_201_unverified(client, api_key_headers, monkey
     workflow_id = uuid4()
     execution_id = uuid4()
 
-    async def fake_report_execution(db, workflow_id, request, redis=None):
+    async def fake_report_execution(
+        *,
+        workflow_id,
+        request,
+        db,
+        redis=None,
+        background_tasks=None,
+        verify_sync=None,
+    ):
         assert request.outcome == "success"
         assert request.agent_did == AUTHOR_DID
         return ExecutionReportResponse(
@@ -494,8 +503,8 @@ def test_report_execution_returns_201_unverified(client, api_key_headers, monkey
         )
 
     monkeypatch.setattr(
-        workflows_router.workflow_registry,
-        "report_execution",
+        workflows_router.workflow_executor,
+        "report_execution_from_request",
         fake_report_execution,
     )
 
@@ -513,7 +522,7 @@ def test_report_execution_returns_201_unverified(client, api_key_headers, monkey
 
 
 def test_report_execution_rejects_unpublished_workflow():
-    """Execution reporting must reject non-published workflows."""
+    """Execution reporting must reject missing or non-published workflows."""
     workflow_id = uuid4()
     workflow_row = _workflow_row(workflow_id)
 
@@ -536,8 +545,8 @@ def test_report_execution_rejects_unpublished_workflow():
     else:  # pragma: no cover
         raise AssertionError("expected 409 for non-published workflow")
 
-    assert response.status_code == 409
-    assert "published" in response.detail
+    assert response.status_code == 404
+    assert response.detail == "workflow not found or not published"
 
 
 def test_report_execution_inserts_row_and_increments_counters():
@@ -549,13 +558,15 @@ def test_report_execution_inserts_row_and_increments_counters():
 
     db = _InspectableSession(
         rows=[
-            [published_row],               # _get_workflow_row_by_id
+            [{"id": workflow_id, "status": "published"}],
+            [{"did": AUTHOR_DID}],
             # no DB call for _verify_context_bundle (bundle_id is None)
             [{"id": execution_id}],        # INSERT RETURNING id
             [],                            # UPDATE workflows counters
             [{"status": "published", "execution_count": 1, "success_count": 1}],
             [{"verified_count": 0}],
             [],                            # _avg_step_trust (no pinned services)
+            [],                            # UPDATE workflows quality_score
         ]
     )
 
@@ -569,9 +580,9 @@ def test_report_execution_inserts_row_and_increments_counters():
 
     assert response.execution_id == execution_id
     assert response.verified is False
-    assert db.commit_count == 1
+    assert db.commit_count == 2
     assert any("INSERT INTO workflow_executions" in sql for sql, _ in db.executed)
-    assert any("success_count = success_count + 1" in sql for sql, _ in db.executed)
+    assert any("CASE WHEN :outcome = 'success'" in sql for sql, _ in db.executed)
 
 
 def test_unverified_executions_cap_quality_score():
