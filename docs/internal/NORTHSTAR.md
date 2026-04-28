@@ -55,6 +55,8 @@ AgentLedger is not a product. It is a stack. Each layer depends on the one below
 
 - Layer 1: Complete. The Manifest Registry is built, tested, and locally verified against the Layer 1 acceptance gates.
 - Layer 2: Complete. The identity and authorization layer is built, tested, and verified in the current codebase.
+- Layer 3: Complete. Trust scoring, attestation, federation, audit anchoring, and hardening are built and locally verified.
+- Layer 4: Complete. Context matching, mismatch detection, selective disclosure, compliance export, and hardening are built and locally verified.
 
 ---
 
@@ -205,6 +207,7 @@ The NorthStar competitive moat is not technical. It is **standard adoption** + *
 - [ ] First agent platform integrates AgentLedger discovery natively
 - [x] Layer 2 spec complete
 - [x] Layer 2 built and locally verified (Identity & Authorization complete)
+- [x] Layer 4 built and locally verified (Context Matching complete)
 - [ ] EU AI Act enforcement (August 2026) — AgentLedger Audit Chain positioned as compliance solution
 
 ### 2027 — Trust Infrastructure
@@ -216,7 +219,7 @@ The NorthStar competitive moat is not technical. It is **standard adoption** + *
 - [ ] Seed funding or revenue sufficient to fund Layer 4 build
 
 ### 2028 — Context & Orchestration
-- [ ] Layer 4 built — context matching with privacy-preserving disclosure
+- [x] Layer 4 built — context matching with privacy-preserving disclosure (completed ahead of roadmap in 2026)
 - [ ] Layer 5 built — workflow registry with human-validated orchestration patterns
 - [ ] 100,000+ registered services
 - [ ] 3+ major agent platforms querying AgentLedger natively

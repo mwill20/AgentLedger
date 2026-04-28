@@ -10,6 +10,7 @@ from api.routers import (
     attestation,
     audit,
     chain,
+    context,
     federation,
     health,
     identity,
@@ -54,3 +55,4 @@ app.include_router(attestation.router, prefix="/v1", tags=["attestation"])
 app.include_router(audit.router, prefix="/v1", tags=["audit"])
 app.include_router(federation.router, prefix="/v1", tags=["federation"])
 app.include_router(chain.router, prefix="/v1", tags=["chain"])
+app.include_router(context.router, prefix="/v1", tags=["context"])

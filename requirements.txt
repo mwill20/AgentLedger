@@ -31,3 +31,4 @@ python-dotenv==1.1.0
 cryptography==44.0.2
 PyJWT==2.9.0
 web3==6.20.1
+reportlab==4.2.5

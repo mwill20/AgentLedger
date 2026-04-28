@@ -2,17 +2,66 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from . import ranker
 
+TRUST_CACHE_TTL_SECONDS = 60
+
+
+def service_trust_cache_key(service_id: str) -> str:
+    """Build the Redis cache key for one Layer 3 service trust snapshot."""
+    return f"trust:service:{service_id}"
+
+
+async def get_cached_service_trust(redis, service_id: str) -> dict[str, Any] | None:
+    """Best-effort Redis read for a Layer 3 service trust snapshot."""
+    if redis is None:
+        return None
+    try:
+        cached = await redis.get(service_trust_cache_key(service_id))
+    except Exception:
+        return None
+    if not cached:
+        return None
+    try:
+        payload = json.loads(cached)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    if "trust_tier" not in payload or "trust_score" not in payload:
+        return None
+    return payload
+
+
+async def cache_service_trust(
+    redis,
+    service_id: str,
+    snapshot: dict[str, Any],
+) -> None:
+    """Best-effort Redis write for a Layer 3 service trust snapshot."""
+    if redis is None:
+        return
+    try:
+        await redis.set(
+            service_trust_cache_key(service_id),
+            json.dumps(snapshot, default=str),
+            ex=TRUST_CACHE_TTL_SECONDS,
+        )
+    except Exception:
+        return
+
 
 async def recompute_service_trust(
     db: AsyncSession,
     service_id: str,
+    redis=None,
 ) -> dict[str, float | int | bool]:
     """Recompute one service's trust score and upgrade tier 4 when eligible."""
     service_result = await db.execute(
@@ -195,10 +244,12 @@ async def recompute_service_trust(
             "globally_revoked": is_globally_revoked,
         },
     )
-    return {
+    snapshot = {
         "trust_score": trust_score,
         "trust_tier": trust_tier,
         "attestation_score": attestation_score,
         "reputation_score": reputation_score,
         "is_globally_revoked": is_globally_revoked,
     }
+    await cache_service_trust(redis, service_id, snapshot)
+    return snapshot

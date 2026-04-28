@@ -67,13 +67,14 @@ def _log_crawl_event(
 
 
 def _get_consecutive_failure_count(conn, service_id: str) -> int:
-    """Count consecutive crawl_failure events (most recent first, stop at first non-failure)."""
+    """Count consecutive crawl failures, ignoring unrelated lifecycle events."""
     with conn.cursor() as cur:
         cur.execute(
             """
             SELECT event_type
             FROM crawl_events
             WHERE service_id = %s
+              AND event_type IN ('crawl_success', 'crawl_failure')
             ORDER BY created_at DESC
             LIMIT 10
             """,

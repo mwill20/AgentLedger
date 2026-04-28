@@ -67,6 +67,66 @@ def sample_manifest_payload() -> dict:
 
 
 @pytest.fixture
+def sample_health_context_profile_payload() -> dict:
+    """Default HEALTH context profile used by Layer 4 tests."""
+    return {
+        "agent_did": "did:key:z6MkContextHealthAgent",
+        "profile_name": "default",
+        "default_policy": "deny",
+        "rules": [
+            {
+                "priority": 20,
+                "scope_type": "trust_tier",
+                "scope_value": "4",
+                "permitted_fields": ["user.name", "user.email", "user.dob"],
+                "denied_fields": [],
+                "action": "permit",
+            },
+            {
+                "priority": 10,
+                "scope_type": "domain",
+                "scope_value": "HEALTH",
+                "permitted_fields": ["user.name", "user.insurance_id"],
+                "denied_fields": ["user.ssn", "user.full_medical_history"],
+                "action": "permit",
+            },
+        ],
+    }
+
+
+@pytest.fixture
+def sample_finance_context_profile_payload() -> dict:
+    """Default FINANCE context profile used by Layer 4 tests."""
+    return {
+        "agent_did": "did:key:z6MkContextFinanceAgent",
+        "profile_name": "default",
+        "default_policy": "deny",
+        "rules": [
+            {
+                "priority": 10,
+                "scope_type": "domain",
+                "scope_value": "FINANCE",
+                "permitted_fields": ["user.name", "user.email"],
+                "denied_fields": ["user.ssn"],
+                "action": "permit",
+            }
+        ],
+    }
+
+
+@pytest.fixture
+def default_context_profile_payloads(
+    sample_health_context_profile_payload: dict,
+    sample_finance_context_profile_payload: dict,
+) -> list[dict]:
+    """Two seeded default Layer 4 profile payloads for tests."""
+    return [
+        sample_health_context_profile_payload,
+        sample_finance_context_profile_payload,
+    ]
+
+
+@pytest.fixture
 def client() -> TestClient:
     """FastAPI test client with DB dependency overridden."""
 
