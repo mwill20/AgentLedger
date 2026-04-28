@@ -19,6 +19,7 @@ from api.routers import (
     search,
     services,
     verify,
+    workflows,
 )
 
 
@@ -56,3 +57,4 @@ app.include_router(audit.router, prefix="/v1", tags=["audit"])
 app.include_router(federation.router, prefix="/v1", tags=["federation"])
 app.include_router(chain.router, prefix="/v1", tags=["chain"])
 app.include_router(context.router, prefix="/v1", tags=["context"])
+app.include_router(workflows.router, prefix="/v1", tags=["workflows"])

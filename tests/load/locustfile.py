@@ -13,6 +13,9 @@ Examples:
     $env:LOAD_PROFILE='search'
     locust -f tests/load/locustfile.py --headless -u 100 -r 20 --run-time 60s --host http://localhost:8000 --csv tests/load/results/search
 
+    $env:LOAD_PROFILE='layer5'; $env:LOAD_WORKFLOW_ID='<published-workflow-uuid>'
+    locust -f tests/load/locustfile.py --headless -u 100 -r 20 --run-time 30s --host http://localhost:8000 --csv tests/load/results/layer5
+
 Profiles:
 - `health`
 - `ontology`
@@ -21,6 +24,7 @@ Profiles:
 - `manifests`
 - `service_detail`
 - `layer3`
+- `layer5`
 - `identity_verify`
 - `identity_lookup`
 - `identity_mixed`
@@ -30,6 +34,9 @@ Identity profile prerequisites:
 - `identity_verify` requires `LOAD_CREDENTIAL_JWT`
 - `identity_lookup` requires `LOAD_AGENT_DID`
 - `identity_mixed` requires `LOAD_CREDENTIAL_JWT`; `LOAD_AGENT_DID`; optional `LOAD_ADMIN_API_KEY`
+
+Layer 5 profile prerequisites:
+- `layer5` requires `LOAD_WORKFLOW_ID` (UUID of a published workflow)
 """
 
 from __future__ import annotations
@@ -60,6 +67,7 @@ LAYER3_SERVICE_ID = os.environ.get("LOAD_LAYER3_SERVICE_ID", SERVICE_DETAIL_ID).
 _QUERY = "book flights with fare comparison and seat selection"
 LOAD_CREDENTIAL_JWT = os.environ.get("LOAD_CREDENTIAL_JWT", "").strip()
 LOAD_AGENT_DID = os.environ.get("LOAD_AGENT_DID", "").strip()
+LOAD_WORKFLOW_ID = os.environ.get("LOAD_WORKFLOW_ID", "").strip()
 
 _flush_stop = threading.Event()
 _manifest_counter = count()
@@ -242,6 +250,15 @@ class AgentLedgerUser(HttpUser):
             name="/v1/authorization/pending",
         )
 
+    @task
+    def workflow_rank(self):
+        workflow_id = _require_identity_env("LOAD_WORKFLOW_ID", LOAD_WORKFLOW_ID)
+        self.client.get(
+            f"/v1/workflows/{workflow_id}/rank",
+            headers=HEADERS,
+            name="/v1/workflows/{id}/rank",
+        )
+
 
 _PROFILE_TASKS = {
     "health": {AgentLedgerUser.health_check: 1},
@@ -256,6 +273,7 @@ _PROFILE_TASKS = {
         AgentLedgerUser.layer3_attestations: 2,
         AgentLedgerUser.layer3_attestation_verify: 1,
     },
+    "layer5": {AgentLedgerUser.workflow_rank: 1},
     "identity_verify": {AgentLedgerUser.verify_agent_credential: 1},
     "identity_lookup": {AgentLedgerUser.get_agent_identity: 1},
     "identity_mixed": {
