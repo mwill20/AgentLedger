@@ -1,9 +1,9 @@
-# AgentLedger — Lesson Index (Layers 1, 2, 3, 4 & 5)
+# AgentLedger — Lesson Index (Layers 1, 2, 3, 4, 5 & 6)
 
 **Project:** AgentLedger — Trust & Discovery Infrastructure for the Autonomous Agent Web
-**Layers covered:** Layer 1 — Manifest Registry · Layer 2 — Identity & Credentials · Layer 3 — Trust & Verification · Layer 4 — Context Matching & Selective Disclosure · Layer 5 — Workflow Registry & Quality Signals
-**Total Lessons:** 50
-**Estimated Total Time:** 50–70 hours
+**Layers covered:** Layer 1 — Manifest Registry · Layer 2 — Identity & Credentials · Layer 3 — Trust & Verification · Layer 4 — Context Matching & Selective Disclosure · Layer 5 — Workflow Registry & Quality Signals · Layer 6 — Liability, Attribution & Regulatory Compliance
+**Total Lessons:** 60
+**Estimated Total Time:** 60–84 hours
 **Prerequisites:** Basic Python, basic SQL, basic understanding of REST APIs
 
 ---
@@ -82,6 +82,20 @@
   Lesson 46    Lesson 47    Lesson 48    Lesson 49    Lesson 50
   Ranking      Context      Execution    Hardening    Final
   Engine       Bundle       Feedback     & Threats    Debrief
+```
+
+### Layer 6 — Liability, Attribution & Regulatory Compliance (Lessons 51–60)
+> **Prerequisites:** Complete Lessons 01, 11, 21, 31, and 41. Layer 6 closes the accountability loop using evidence from all five prior layers.
+
+```
+  Lesson 51    Lesson 52    Lesson 53    Lesson 54    Lesson 55
+  Liability    Snapshot     Claim        Attribution  Compliance
+  Architecture Creation     Filing       Engine       Export
+      |            |             |             |           |
+      v            v             v             v           v
+  Lesson 56    Lesson 57    Lesson 58    Lesson 59    Lesson 60
+  Claims       Data Models  Hardening    Schema &     Final
+  Lifecycle    & Routes     & Load Test  Migration    Debrief
 ```
 
 ---

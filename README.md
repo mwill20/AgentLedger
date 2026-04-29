@@ -1,45 +1,138 @@
 # AgentLedger
 
-Discovery, identity, trust, context, workflow, and liability infrastructure for the autonomous agent web.
+<p align="center">
+  <img src="docs/AgentLedger_Logo.png" alt="AgentLedger logo" width="220">
+</p>
 
-AgentLedger is infrastructure, not an orchestration runtime. It registers services, verifies identities, computes trust signals, controls context disclosure, publishes validated workflow specifications that agent platforms can execute, and preserves liability evidence for dispute and regulatory workflows.
+AgentLedger is local proof-of-concept infrastructure for discovery, identity, trust, context disclosure, workflow validation, and liability evidence in the autonomous agent web.
 
-## Current Status
+## Purpose
 
-Layers 1-6 are implemented and tested.
+This project demonstrates a six-layer trust infrastructure for agent-native services. It solves the problem of discovering, validating, ranking, auditing, and attributing responsibility for agent-service interactions by combining a manifest registry, identity/session assertions, trust scoring, context disclosure controls, workflow validation, and liability evidence capture.
 
-| Layer | Capability | Status |
+AgentLedger is infrastructure, not an orchestration runtime. Agent platforms execute workflows; AgentLedger registers services, verifies identities, computes trust signals, controls context disclosure, publishes validated workflow specifications, and preserves evidence for dispute and regulatory workflows.
+
+## Intended Audience
+
+This project is intended for:
+
+- AI agent infrastructure builders.
+- API/platform engineers evaluating service discovery and trust patterns.
+- Researchers reviewing agent trust, context disclosure, workflow quality, and liability evidence architectures.
+- Technical reviewers assessing a runnable proof of concept.
+
+Expected background:
+
+- Python/FastAPI basics.
+- Docker Compose.
+- REST API testing with curl or the OpenAPI UI.
+- PostgreSQL/Redis basics for deeper debugging.
+- Solidity/Hardhat only if working on Layer 3 contracts.
+
+This project is not intended for production processing of real user data without additional security, privacy, legal, and operational review.
+
+## Project Status
+
+Current status: v0.1.0 local proof of concept.
+
+Layers 1-6 are implemented and tested locally.
+
+| Layer | Capability | v0.1.0 Status |
 |---|---|---|
-| Layer 1 | Manifest registry, ontology discovery, structured search, semantic search | Complete |
-| Layer 2 | Agent identity, verifiable credentials, session assertions, HITL approval | Complete |
-| Layer 3 | Auditor network, attestations, revocations, audit chain, trust scoring | Complete |
-| Layer 4 | Context profiles, mismatch detection, matching, selective disclosure, compliance PDF export | Complete |
-| Layer 5 | Workflow registry, validation queue, ranking, context bundles, execution outcome quality loop | Complete |
-| Layer 6 | Liability snapshots, dispute claims, evidence gathering, attribution, regulatory exports, hardening | Complete |
+| Layer 1 | Manifest registry, ontology discovery, structured search, semantic search | Implemented |
+| Layer 2 | Agent identity, verifiable credentials, session assertions, HITL approval | Implemented |
+| Layer 3 | Auditor network, attestations, revocations, audit chain, trust scoring | Code-complete; testnet deployment deferred |
+| Layer 4 | Context profiles, mismatch detection, matching, selective disclosure, compliance PDF export | Implemented |
+| Layer 5 | Workflow registry, validation queue, ranking, context bundles, execution outcome quality loop | Implemented |
+| Layer 6 | Liability snapshots, dispute claims, evidence gathering, attribution, regulatory exports | Implemented |
 
-Latest local verification:
+Latest local validation in this workspace:
 
 ```bash
-pytest tests -q
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 pytest -p pytest_asyncio tests -q
 # 346 passed
 ```
 
-Layer 5 hardening verification:
+Do not treat v0.1.0 as production-ready.
 
-- Workflow service coverage: 81% total across Layer 5 service modules
-- Cached `GET /v1/workflows`: p95 5.12ms at 100 concurrent requests
-- Cached `GET /v1/workflows/{id}/rank`: p95 4.49ms at 100 concurrent requests
+## Key Features
 
-Layer 6 hardening verification:
+- Service manifest registration with ontology validation.
+- Structured and semantic service discovery.
+- DID-based agent and service identity flows.
+- Trust scoring, attestations, revocations, and chain-status integration.
+- Agent-owned context profiles and disclosure audit trails.
+- HMAC-SHA256 commitments for sensitive context disclosure in v0.1.0.
+- Human validation queue for workflow definitions.
+- Workflow ranking and context bundle approval flows.
+- Synchronous liability snapshots at workflow execution reporting time.
+- Evidence gathering and attribution for liability claims.
+- Context and liability compliance PDF export paths.
 
-- Claim filing rate limit: 10 claims per `claimant_did` per hour
-- Redis claim status cache: 60-second TTL, refreshed on every claim status transition
-- `GET /v1/liability/snapshots/{execution_id}` route handler p95 under 200ms at 100 concurrent calls
+## Repository Structure
 
-## Quick Start
+```text
+.
+|-- api/                    FastAPI app, routers, models, services
+|-- contracts/              Solidity contracts and Hardhat scripts
+|-- crawler/                Celery worker tasks
+|-- db/                     Alembic migrations and seed scripts
+|-- docs/                   Reviewer docs, architecture notes, lessons
+|-- examples/               Sample API inputs and representative outputs
+|-- ontology/               Capability ontology source
+|-- spec/                   Layer specs, release notes, completion docs
+|-- tests/                  API, crawler, integration, and load tests
+|-- docker-compose.yml      Local POC stack
+|-- Dockerfile              App image
+|-- requirements.txt        Python dependencies
+|-- package.json            Layer 3 contract tooling
+```
+
+## Requirements
+
+| Requirement | Version / Notes |
+|---|---|
+| Docker + Docker Compose | Required for the recommended local stack. |
+| Python | 3.11+ in Docker image; host-side tests in this workspace used Python 3.12. |
+| PostgreSQL | Provided by Docker Compose as `pgvector/pgvector:pg15`. |
+| Redis | Provided by Docker Compose as `redis:7-alpine`. |
+| Node.js/npm | Required only for Solidity contract work. Version: TODO. |
+| GPU | Not required for local POC mode. |
+| External services | Not required for local POC mode. Layer 3 testnet writes require RPC, deployed contracts, signer key, and testnet funds. |
+
+See [docs/INSTALLATION.md](docs/INSTALLATION.md) and [.env.example](.env.example).
+
+## Quickstart
 
 ```bash
-docker compose up --build
+git clone https://github.com/mwill20/AgentLedger.git
+cd AgentLedger
+cp .env.example .env
+docker compose up -d --build
+```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/mwill20/AgentLedger.git
+cd AgentLedger
+Copy-Item .env.example .env
+docker compose up -d --build
+```
+
+Verify:
+
+```bash
+curl http://localhost:8000/v1/health
+curl -H "X-API-Key: dev-local-only" http://localhost:8000/v1/ontology
+```
+
+Expected success signals:
+
+```text
+GET /v1/health returns status "ok".
+GET /v1/ontology returns ontology_version "0.1" and total_tags 65.
+OpenAPI docs render at http://localhost:8000/docs.
 ```
 
 Default local keys unless overridden:
@@ -49,211 +142,133 @@ Default local keys unless overridden:
 
 For full Layer 2 credential issuance, configure `ISSUER_PRIVATE_JWK` in `.env`.
 
-Useful local URLs:
+## Usage
 
-- API docs: `http://localhost:8000/docs`
-- Health: `GET http://localhost:8000/v1/health`
-- Ontology: `GET http://localhost:8000/v1/ontology`
+Open the API docs:
 
-Protected endpoints require `X-API-Key: dev-local-only` unless using bearer credential auth where noted.
+```text
+http://localhost:8000/docs
+```
 
-## API Surface
+Register the sample service manifest:
 
-### Layer 1: Registry and Discovery
+```bash
+curl -X POST http://localhost:8000/v1/manifests \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: dev-local-only" \
+  --data @examples/service_manifest.sample.json
+```
 
-- `POST /v1/manifests`
-- `GET /v1/services`
-- `GET /v1/services/{service_id}`
-- `POST /v1/search`
-- `GET /v1/ontology`
-- `POST /v1/services/{service_id}/verify`
+Search services:
 
-### Layer 2: Identity and Session Assertions
+```bash
+curl -X POST http://localhost:8000/v1/search \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: dev-local-only" \
+  -d '{"query":"book a flight","limit":5}'
+```
 
-- `GET /v1/identity/.well-known/did.json`
-- `POST /v1/identity/agents/register`
-- `POST /v1/identity/agents/verify`
-- `GET /v1/identity/agents/{did}`
-- `POST /v1/identity/agents/{did}/revoke`
-- `POST /v1/identity/sessions/request`
-- `GET /v1/identity/sessions/{request_id}`
-- `POST /v1/identity/sessions/redeem`
-- `GET /v1/identity/authorization/pending`
-- `POST /v1/identity/authorization/{request_id}/approve`
-- `POST /v1/identity/authorization/{request_id}/deny`
+See [docs/USAGE.md](docs/USAGE.md) for more local smoke paths.
 
-### Layer 3: Trust and Verification
+## Example Input And Output
 
-- `POST /v1/auditors/register`
-- `GET /v1/auditors`
-- `GET /v1/auditors/{did}`
-- `POST /v1/attestations`
-- `POST /v1/attestations/revoke`
-- `GET /v1/attestations/{service_id}`
-- `GET /v1/attestations/{service_id}/verify`
-- `POST /v1/audit/records`
-- `GET /v1/audit/records`
-- `GET /v1/audit/records/{record_id}/verify`
-- `GET /v1/federation/blocklist`
-- `POST /v1/federation/revocations/submit`
-- `GET /v1/chain/status`
-- `GET /v1/chain/events`
+Sample manifest input:
 
-### Layer 4: Context Matching and Disclosure
+- [examples/service_manifest.sample.json](examples/service_manifest.sample.json)
 
-- `POST /v1/context/profiles`
-- `GET /v1/context/profiles/{agent_did}`
-- `PUT /v1/context/profiles/{agent_did}`
-- `POST /v1/context/match`
-- `GET /v1/context/mismatches`
-- `POST /v1/context/mismatches/{id}/resolve`
-- `POST /v1/context/disclose`
-- `GET /v1/context/disclosures/{agent_did}`
-- `POST /v1/context/revoke/{disclosure_id}`
-- `GET /v1/context/compliance/export/{agent_did}`
+Representative manifest registration response shape:
 
-### Layer 5: Workflow Registry and Quality Signals
+- [examples/service_manifest_response.sample.json](examples/service_manifest_response.sample.json)
 
-- `POST /v1/workflows`
-- `PUT /v1/workflows/{workflow_id}`
-- `GET /v1/workflows`
-- `GET /v1/workflows/{workflow_id}`
-- `GET /v1/workflows/slug/{slug}`
-- `POST /v1/workflows/{workflow_id}/validate`
-- `PUT /v1/workflows/{workflow_id}/validation`
-- `GET /v1/workflows/{workflow_id}/rank`
-- `POST /v1/workflows/context/bundle`
-- `POST /v1/workflows/context/bundle/{bundle_id}/approve`
-- `POST /v1/workflows/{workflow_id}/executions`
-
-### Layer 6: Liability and Regulatory Evidence
-
-- `GET /v1/liability/snapshots/{execution_id}`
-- `GET /v1/liability/snapshots`
-- `POST /v1/liability/claims`
-- `GET /v1/liability/claims/{claim_id}`
-- `POST /v1/liability/claims/{claim_id}/gather`
-- `POST /v1/liability/claims/{claim_id}/determine`
-- `POST /v1/liability/claims/{claim_id}/resolve`
-- `POST /v1/liability/claims/{claim_id}/appeal`
-- `GET /v1/liability/compliance/export`
+Actual response values depend on the current database state, manifest content, and configured environment.
 
 ## Architecture
 
-The current build provides these core capabilities:
+```mermaid
+flowchart TB
+    Client["Agent platforms, services, validators, auditors"] --> API["AgentLedger FastAPI /v1"]
+    API --> L1["Layer 1: Registry, ontology, search"]
+    L1 --> L2["Layer 2: Identity and session assertions"]
+    L2 --> L3["Layer 3: Trust, attestations, revocations"]
+    L3 --> L4["Layer 4: Context matching and disclosure audit"]
+    L4 --> L5["Layer 5: Workflow registry, ranking, outcomes"]
+    L5 --> L6["Layer 6: Liability snapshots, claims, compliance exports"]
 
-1. Ingest service manifests from `/.well-known/agent-manifest.json`.
-2. Discover services with ontology filters and semantic search.
-3. Verify service domains and activate `did:web` identities.
-4. Register agents, issue JWT verifiable credentials, and redeem session assertions.
-5. Register auditors, record attestations and revocations, and compute trust scores.
-6. Match service context requests against agent-controlled context profiles.
-7. Generate HMAC-SHA256 commitments for sensitive context disclosure.
-8. Release disclosure nonces only after trust re-verification and append-only audit logging.
-9. Export context compliance records as PDF.
-10. Publish human-validated workflow specs with ranking and outcome quality signals.
-11. Capture synchronous liability snapshots during workflow execution reporting.
-12. Gather immutable dispute evidence across Layers 1-6.
-13. Compute liability attribution weights from evidence-backed factor evaluation.
-14. Export liability compliance PDFs for EU AI Act, HIPAA, SEC, and full-scope reviews.
-
-## Tech Stack
-
-| Component | Technology |
-|---|---|
-| API | FastAPI, Python 3.11+ |
-| Database | PostgreSQL 15 + pgvector |
-| Cache | Redis 7 |
-| Workers | Celery + Redis |
-| Embeddings | sentence-transformers, with hash mode for fast tests/load runs |
-| Identity crypto | Ed25519, PyJWT |
-| Chain integration | Solidity, Hardhat, web3.py, Polygon Amoy/local chain mode |
-| PDF export | reportlab |
-
-## Configuration
-
-Environment variables are loaded from `.env` via `pydantic-settings`. Start with [.env.example](.env.example).
-
-Important settings:
-
-- `API_KEYS`: comma-separated accepted API keys.
-- `ADMIN_API_KEYS`: comma-separated admin keys for revocation and approval endpoints.
-- `DATABASE_URL`: async PostgreSQL connection string.
-- `REDIS_URL`: Redis connection string.
-- `IP_RATE_LIMIT`: per-IP limit for the ASGI middleware. Set `0` or lower to disable.
-- `IP_RATE_WINDOW_SECONDS`: per-IP rate-limit window.
-- `ISSUER_DID`: DID used as the VC issuer.
-- `ISSUER_PRIVATE_JWK`: Ed25519 private JWK used to sign credentials and assertions.
-- `SESSION_ASSERTION_TTL_SECONDS`: standard session lifetime.
-- `APPROVED_SESSION_TTL_SECONDS`: approved HITL session lifetime.
-- `AUTHORIZATION_WEBHOOK_URL`: optional webhook target for pending approvals.
-- `EMBEDDING_MODE`: `model` for sentence-transformers, `hash` for CPU-only CI/load runs.
-- `UVICORN_WORKERS`: app worker count used by [entrypoint.sh](entrypoint.sh).
-- `CHAIN_MODE`: local or web3-backed chain mode.
-
-## Testing
-
-Run the full test suite from repo root:
-
-```bash
-pytest tests -q
+    API --> DB["PostgreSQL + pgvector"]
+    API --> Redis["Redis cache / broker"]
+    Redis --> Worker["Celery worker / beat"]
+    Worker --> DB
+    L3 -. optional .-> Chain["Web3 provider + Solidity contracts"]
 ```
 
-Run Layer 5 workflow tests:
+For the full architecture design, including runtime topology, layer responsibilities, data stores, key flows, trust boundaries, and non-goals, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-```bash
-pytest tests/test_api/test_workflow_*.py -q
+## Evaluation
+
+See [docs/EVALUATION.md](docs/EVALUATION.md).
+
+Current recorded local validation:
+
+| Check | Result | Notes |
+|---|---|---|
+| Full test suite | 346 passed | Observed in this workspace before this documentation update. |
+| Health endpoint | HTTP 200 | Local Docker stack. |
+| OpenAPI docs | HTTP 200 | Local Docker stack. |
+| Ontology endpoint | HTTP 200, 65 tags | Requires `X-API-Key`. |
+
+Performance/resource characteristics that are not in the repo are marked `Not yet measured` in the evaluation and monitoring docs.
+
+## Data And Model Notes
+
+- This repository does not include a machine-learning training dataset.
+- It uses a repository-local ontology file at [ontology/v0.1.json](ontology/v0.1.json).
+- It does not train or fine-tune a model.
+- Semantic search can use deterministic hash embeddings locally or sentence-transformers when configured.
+
+See [docs/DATASET.md](docs/DATASET.md) and [docs/MODEL_CARD.md](docs/MODEL_CARD.md).
+
+## Security Considerations
+
+See [SECURITY.md](SECURITY.md).
+
+Important local cautions:
+
+- Do not commit `.env`, API keys, private JWKs, blockchain signer keys, database dumps, or real user data.
+- POC Redis failure behavior is fail open.
+- Compliance exports are evidence packages, not legal certifications.
+- Liability attribution outputs are evidence-backed computation outputs, not binding legal rulings.
+
+## Limitations
+
+See [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+
+Key limitations:
+
+- Local-only POC deployment target.
+- Layer 3 testnet deployment deferred.
+- No root license file yet.
+- Legal/security reviews deferred for POC.
+- Production monitoring, backups, hosted deployment, and resource benchmarks are TODO.
+
+## Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+Current deployment target: local Docker Compose only.
+
+## Monitoring And Maintenance
+
+See [docs/MONITORING.md](docs/MONITORING.md) and [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+## API Surface
+
+The complete interactive API reference is available at:
+
+```text
+http://localhost:8000/docs
 ```
 
-Coverage example:
-
-```bash
-pytest tests --cov=api --cov=crawler --cov-report=term -q
-```
-
-Windows coverage note:
-
-```powershell
-$env:COVERAGE_FILE = Join-Path $env:TEMP 'agentledger.coverage'
-pytest tests --cov=api --cov=crawler --cov-report=term -q
-```
-
-## Load Testing
-
-The reusable load harness lives in [tests/load/locustfile.py](tests/load/locustfile.py).
-
-Documented load-test app mode:
-
-```powershell
-$env:API_KEYS='load-test-key'
-$env:IP_RATE_LIMIT='100000'
-$env:EMBEDDING_MODE='hash'
-$env:UVICORN_WORKERS='4'
-docker compose up -d --build app
-```
-
-Example profile run:
-
-```powershell
-$env:LOAD_PROFILE='manifests'
-$env:LOAD_API_KEY='load-test-key'
-$env:LOAD_FLUSH_RATE_LIMITS='0'
-locust -f tests/load/locustfile.py --headless -u 100 -r 20 --run-time 60s --host http://localhost:8000
-```
-
-## Project Structure
-
-- Runtime API code: [api/](api/)
-- Background workers: [crawler/](crawler/)
-- Database migrations and seed scripts: [db/](db/)
-- Solidity contracts and scripts: [contracts/](contracts/)
-- Ontology source: [ontology/v0.1.json](ontology/v0.1.json)
-- Implementation specs and completion summaries: [spec/](spec/)
-- Lessons and documentation: [docs/](docs/)
-- Tests: [tests/](tests/)
-- Docker stack: [docker-compose.yml](docker-compose.yml)
-
-Canonical specs:
+Canonical implementation specs:
 
 - [Layer 1 spec](spec/LAYER1_SPEC.md)
 - [Layer 2 spec](spec/LAYER2_SPEC.md)
@@ -262,9 +277,37 @@ Canonical specs:
 - [Layer 5 spec](spec/LAYER5_SPEC.md)
 - [Layer 6 spec](spec/LAYER6_SPEC.md)
 
-Completion summaries:
+Completion and release docs:
 
 - [Layer 1 completion](spec/LAYER1_COMPLETION.md)
 - [Layer 2 completion](spec/LAYER2_COMPLETION.md)
 - [Layer 3 completion](spec/LAYER3_COMPLETION.md)
 - [Layer 5 completion](spec/LAYER5_COMPLETION.md)
+- [Layer 6 completion](spec/LAYER6_COMPLETION.md)
+- [v0.1.0 release notes](spec/RELEASE_NOTES_v0.1.0.md)
+- [operations runbook](spec/OPERATIONS_RUNBOOK.md)
+- [environment matrix](spec/ENV_MATRIX.md)
+- [legal scope note](spec/LEGAL_SCOPE_NOTE.md)
+
+TODO: Add or link a Layer 4 completion summary if one is intended to be part of the release docs.
+
+## Access And Availability
+
+| Item | Status |
+|---|---|
+| Repository | `https://github.com/mwill20/AgentLedger.git` |
+| Project status | Local proof of concept. |
+| Open source status | TODO: depends on selected license. |
+| Dataset access | Not applicable; no training dataset is included. |
+| Model access | Optional sentence-transformers model path; see [docs/MODEL_CARD.md](docs/MODEL_CARD.md). |
+| External service access | Not required for local POC; required for live Layer 3 testnet writes. |
+
+## License
+
+TODO: Add a root `LICENSE` file. Until a license is added, usage rights are unclear.
+
+## Support
+
+For questions, bugs, or feature requests, open a GitHub issue.
+
+Security issues should follow [SECURITY.md](SECURITY.md). TODO: add a private security contact.

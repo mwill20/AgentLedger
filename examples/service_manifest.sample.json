@@ -1,0 +1,39 @@
+{
+  "manifest_version": "1.0",
+  "service_id": "00000000-0000-4000-8000-000000000101",
+  "name": "Example Flight Booker",
+  "domain": "example-flight-booker.test",
+  "capabilities": [
+    {
+      "id": "book-flight",
+      "ontology_tag": "travel.air.book",
+      "description": "Book flights to major cities with confirmation and seat selection."
+    }
+  ],
+  "pricing": {
+    "model": "free",
+    "tiers": [],
+    "billing_method": "none"
+  },
+  "context": {
+    "required": [
+      {
+        "field_name": "user.full_name",
+        "field_type": "string",
+        "sensitivity": "medium",
+        "description": "Passenger name for booking."
+      }
+    ],
+    "optional": [],
+    "data_retention_days": 0,
+    "data_sharing": "none"
+  },
+  "operations": {
+    "uptime_sla_percent": 99.0,
+    "rate_limits": {
+      "rpm": 60,
+      "rpd": 1000
+    }
+  },
+  "last_updated": "2026-04-29T00:00:00Z"
+}
