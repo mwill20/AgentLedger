@@ -67,19 +67,19 @@ def parse_manifest_public_key_jwk(manifest: ServiceManifest) -> dict[str, Any]:
     """Parse the manifest public key field as a JWK object."""
     if not manifest.public_key:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest public_key is required for signed service identity",
         )
     try:
         value = json.loads(manifest.public_key)
     except json.JSONDecodeError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest public_key must be a valid JWK JSON string",
         ) from exc
     if not isinstance(value, dict):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest public_key must decode to a JWK object",
         )
     return value
@@ -93,19 +93,19 @@ def _extract_verification_method(
     methods = did_document.get("verificationMethod")
     if not isinstance(methods, list):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="did document is missing verificationMethod entries",
         )
     for method in methods:
         if isinstance(method, dict) and method.get("id") == verification_method_id:
             if not isinstance(method.get("publicKeyJwk"), dict):
                 raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                     detail="verification method is missing publicKeyJwk",
                 )
             return method
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         detail="verification method not found in did document",
     )
 
@@ -119,7 +119,7 @@ def _ensure_method_is_authorized(
     assertion_method = did_document.get("assertionMethod") or []
     if verification_method_id not in authentication or verification_method_id not in assertion_method:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="verification method must appear in authentication and assertionMethod",
         )
 
@@ -146,12 +146,12 @@ async def _fetch_did_web_document(domain: str) -> dict[str, Any]:
         payload = response.json()
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="did:web document must be valid JSON",
         ) from exc
     if not isinstance(payload, dict):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="did:web document must decode to an object",
         )
     return payload
@@ -183,7 +183,7 @@ async def resolve_service_did_document(
     expected_did = service_did_from_domain(domain)
     if did_document.get("id") != expected_did:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="did:web document id does not match the service domain",
         )
 
@@ -214,14 +214,14 @@ async def validate_signed_manifest(
     """Validate the identity and signature blocks of a signed manifest."""
     if manifest.identity is None or manifest.signature is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest identity and signature blocks are required",
         )
 
     expected_did = service_did_from_domain(manifest.domain)
     if manifest.identity.did != expected_did:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest identity.did must match the service did:web identifier",
         )
 
@@ -243,7 +243,7 @@ async def validate_signed_manifest(
     verification_jwk = method["publicKeyJwk"]
     if verification_jwk != manifest_public_jwk:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest public_key does not match the did:web verification method",
         )
 
@@ -253,7 +253,7 @@ async def validate_signed_manifest(
         public_jwk=verification_jwk,
     ):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="manifest signature verification failed",
         )
 

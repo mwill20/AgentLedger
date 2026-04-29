@@ -61,7 +61,7 @@ async def _store_proof_nonce(redis, principal_did: str, nonce: str) -> None:
         return
     if stored is False:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="proof nonce has already been used",
         )
 
@@ -93,7 +93,7 @@ async def request_session(
     )
     if age_seconds > settings.proof_nonce_ttl_seconds:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="proof timestamp is outside the allowed replay window",
         )
 
@@ -103,7 +103,7 @@ async def request_session(
         public_jwk=principal.public_key_jwk,
     ):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="invalid session proof signature",
         )
 

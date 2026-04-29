@@ -111,7 +111,7 @@ async def _ensure_domain_scopes_exist(
     missing = [domain for domain in domains if domain not in existing]
     if missing:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"unknown ontology domains: {', '.join(missing)}",
         )
 

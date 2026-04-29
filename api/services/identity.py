@@ -77,7 +77,7 @@ async def _store_proof_nonce(redis, did_value: str, nonce: str) -> None:
         return
     if stored is False:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="proof nonce has already been used",
         )
 
@@ -113,7 +113,7 @@ async def _check_revocation_set(redis, did_value: str) -> bool:
 
     Returns True if the DID is in the revocation set, False otherwise.
     SISMEMBER on a non-existent key returns 0, which is the correct
-    "not revoked" answer — avoids a separate EXISTS round trip.
+    "not revoked" answer - avoids a separate EXISTS round trip.
     """
     if redis is None:
         return False
@@ -212,7 +212,7 @@ async def register_agent(
     )
     if age_seconds > settings.proof_nonce_ttl_seconds:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="proof timestamp is outside the allowed replay window",
         )
 
@@ -224,13 +224,13 @@ async def register_agent(
         derived_did = did.did_key_from_public_jwk(public_jwk)
     except ValueError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
 
     if derived_did != request.did:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="submitted DID does not match the DID document public key",
         )
 
@@ -240,7 +240,7 @@ async def register_agent(
         public_jwk=public_jwk,
     ):
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="invalid proof signature",
         )
 

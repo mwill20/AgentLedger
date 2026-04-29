@@ -23,6 +23,21 @@ MODEL_NAME = "all-MiniLM-L6-v2"
 _model: SentenceTransformer | None = None
 _model_load_attempted = False
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
+_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "at",
+    "by",
+    "for",
+    "in",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with",
+}
 
 
 def _normalize_token(token: str) -> str:
@@ -77,7 +92,9 @@ def _tokenize(text: str) -> list[str]:
 def _hash_embed(text: str, dimension: int = EMBEDDING_DIMENSION) -> list[float]:
     """Create a deterministic embedding without external dependencies."""
     vector = [0.0] * dimension
-    tokens = _tokenize(text)
+    normalized_tokens = _tokenize(text)
+    content_tokens = [token for token in normalized_tokens if token not in _STOPWORDS]
+    tokens = sorted(set(content_tokens or normalized_tokens))
     if not tokens:
         return vector
 

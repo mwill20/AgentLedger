@@ -213,7 +213,16 @@ def enqueue_domain_verification(domain: str, service_id: UUID | str) -> bool:
     """Queue domain verification when Celery is available."""
     if celery_app is None:
         return False
-    verify_domain_task.delay(domain, str(service_id))
+    try:
+        verify_domain_task.delay(domain, str(service_id))
+    except Exception as exc:
+        logger.warning(
+            "Domain verification enqueue skipped for %s (%s): %s",
+            domain,
+            service_id,
+            exc.__class__.__name__,
+        )
+        return False
     return True
 
 

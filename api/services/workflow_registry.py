@@ -238,7 +238,7 @@ async def _load_ontology_rows(
     missing = [tag for tag in unique_tags if tag not in rows]
     if missing:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"unknown ontology tags: {', '.join(missing)}",
         )
     return rows
@@ -269,7 +269,7 @@ async def _validate_pinned_service_step(
     )
     if capability_result.mappings().first() is None:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=(
                 f"service {step.service_id} is not active for ontology tag "
                 f"{step.ontology_tag}"
@@ -295,7 +295,7 @@ async def _validate_pinned_service_step(
     missing = [field for field in required_fields if field not in declared]
     if missing:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=(
                 f"pinned service {step.service_id} does not declare required "
                 f"context fields: {', '.join(missing)}"
@@ -312,7 +312,7 @@ async def _validate_workflow_spec(
     missing_from_tags = [tag for tag in sorted(set(step_tags)) if tag not in request.tags]
     if missing_from_tags:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=f"workflow tags must include step tags: {', '.join(missing_from_tags)}",
         )
 

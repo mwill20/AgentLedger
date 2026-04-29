@@ -432,8 +432,8 @@ async def _load_disclosure_tags_for_execution(
             FROM context_disclosures
             WHERE agent_did = :agent_did
               AND created_at BETWEEN
-                    (:reported_at - INTERVAL '35 minutes')
-                AND (:reported_at + INTERVAL '5 minutes')
+                    (CAST(:reported_at AS TIMESTAMPTZ) - INTERVAL '35 minutes')
+                AND (CAST(:reported_at AS TIMESTAMPTZ) + INTERVAL '5 minutes')
             """
         ),
         {

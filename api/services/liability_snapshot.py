@@ -177,8 +177,8 @@ async def _load_step_trust_states(
                 WHERE context_disclosures.agent_did = :agent_did
                   AND context_disclosures.ontology_tag = ws.ontology_tag
                   AND context_disclosures.created_at BETWEEN
-                        (:reported_at - INTERVAL '35 minutes')
-                    AND (:reported_at + INTERVAL '5 minutes')
+                        (CAST(:reported_at AS TIMESTAMPTZ) - INTERVAL '35 minutes')
+                    AND (CAST(:reported_at AS TIMESTAMPTZ) + INTERVAL '5 minutes')
                 ORDER BY context_disclosures.created_at DESC
                 LIMIT 1
             ) cd ON ws.service_id IS NULL
@@ -231,8 +231,8 @@ async def _load_context_summary(
             FROM context_disclosures
             WHERE agent_did = :agent_did
               AND created_at BETWEEN
-                    (:reported_at - INTERVAL '35 minutes')
-                AND (:reported_at + INTERVAL '5 minutes')
+                    (CAST(:reported_at AS TIMESTAMPTZ) - INTERVAL '35 minutes')
+                AND (CAST(:reported_at AS TIMESTAMPTZ) + INTERVAL '5 minutes')
             """
         ),
         {
@@ -258,8 +258,8 @@ async def _load_context_summary(
             WHERE agent_did = :agent_did
               AND (:service_ids_empty OR service_id = ANY(CAST(:service_ids AS UUID[])))
               AND created_at BETWEEN
-                    (:reported_at - INTERVAL '35 minutes')
-                AND (:reported_at + INTERVAL '5 minutes')
+                    (CAST(:reported_at AS TIMESTAMPTZ) - INTERVAL '35 minutes')
+                AND (CAST(:reported_at AS TIMESTAMPTZ) + INTERVAL '5 minutes')
             """
         ),
         {
