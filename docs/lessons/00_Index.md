@@ -1,9 +1,9 @@
-# AgentLedger — Lesson Index (Layers 1, 2, 3 & 4)
+# AgentLedger — Lesson Index (Layers 1, 2, 3, 4 & 5)
 
 **Project:** AgentLedger — Trust & Discovery Infrastructure for the Autonomous Agent Web
-**Layers covered:** Layer 1 — Manifest Registry · Layer 2 — Identity & Credentials · Layer 3 — Trust & Verification · Layer 4 — Context Matching & Selective Disclosure
-**Total Lessons:** 40
-**Estimated Total Time:** 40–56 hours
+**Layers covered:** Layer 1 — Manifest Registry · Layer 2 — Identity & Credentials · Layer 3 — Trust & Verification · Layer 4 — Context Matching & Selective Disclosure · Layer 5 — Workflow Registry & Quality Signals
+**Total Lessons:** 50
+**Estimated Total Time:** 50–70 hours
 **Prerequisites:** Basic Python, basic SQL, basic understanding of REST APIs
 
 ---
@@ -68,6 +68,20 @@
   Lesson 36    Lesson 37    Lesson 38    Lesson 39    Lesson 40
   HMAC         Selective    Audit        Compliance   Hardening &
   Commitment   Disclosure   Trail        Export       Interview
+```
+
+### Layer 5 — Workflow Registry & Quality Signals (Lessons 41–50)
+> **Prerequisites:** Complete Lessons 01, 11, 21, and 31. Layer 5 builds on Layer 3 trust tiers (Lesson 25) and Layer 4 context matching (Lesson 34).
+
+```
+  Lesson 41    Lesson 42    Lesson 43    Lesson 44    Lesson 45
+  Workflow     Workflow     CRUD &       Validation   Quality
+  Architecture Spec         Caching      Queue        Score
+      |            |             |             |           |
+      v            v             v             v           v
+  Lesson 46    Lesson 47    Lesson 48    Lesson 49    Lesson 50
+  Ranking      Context      Execution    Hardening    Final
+  Engine       Bundle       Feedback     & Threats    Debrief
 ```
 
 ---
@@ -149,15 +163,35 @@
 
 ---
 
+## Layer 5 Lesson List
+
+> **Prerequisites for all Layer 5 lessons:** Complete Lessons 01, 11, 21, and 31. Lessons 25 (trust tiers) and 34 (8-step matching engine) are especially relevant.
+
+| # | Title | Files Covered | Time | Required? |
+|---|-------|--------------|------|-----------|
+| 41 | **The Registry That Doesn't Execute** — Layer 5 Architecture | `spec/LAYER5_SPEC.md`, `api/services/workflow_registry.py`, `api/services/workflow_ranker.py`, `api/services/workflow_validator.py`, `api/services/workflow_context.py`, `db/migrations/versions/006_layer5_workflows.py` | 75 min | Yes |
+| 42 | **The Blueprint** — Workflow Spec Format & Validation Rules | `api/models/workflow.py`, `api/services/workflow_registry.py` (`_validate_workflow_spec`) | 75 min | Yes |
+| 43 | **The Filing System** — CRUD, Caching & Rate Limiting | `api/services/workflow_registry.py` (CRUD half), `api/routers/workflows.py` | 75 min | Yes |
+| 44 | **The Expert Witness** — Human Validation Queue | `api/services/workflow_validator.py`, `api/models/workflow.py` (checklist) | 60 min | Yes |
+| 45 | **The Quality Ledger** — Composite Scoring Engine | `api/services/workflow_ranker.py` (lines 69–161), `api/services/workflow_validator.py` (lines 30–44) | 60 min | Yes |
+| 46 | **The Talent Agency** — Per-Step Ranking Engine | `api/services/workflow_ranker.py` (lines 55–411), `api/routers/workflows.py` | 75 min | Yes |
+| 47 | **The One-Stop Approval** — Context Bundle Integration | `api/services/workflow_context.py`, `api/models/workflow.py` | 75 min | Yes |
+| 48 | **The Feedback Machine** — Execution Outcome Reporting | `api/services/workflow_executor.py` | 60 min | Yes |
+| 49 | **The Four Threats** — Anti-Gaming & Hardening | `api/services/workflow_validator.py`, `api/services/workflow_ranker.py`, `api/services/workflow_context.py`, `api/services/workflow_registry.py` | 60 min | Yes |
+| 50 | **The Final Debrief** — Full Layer 5 Flow & Interview Readiness | `spec/LAYER5_COMPLETION.md`, all Layer 5 service files | 90 min | Yes |
+
+---
+
 ## How to Use These Lessons
 
-1. **Sequential learner:** Go 01 → 10 (Layer 1), then 11 → 20 (Layer 2), then 21 → 30 (Layer 3), then 31 → 40 (Layer 4). Each lesson builds on the previous within a layer.
+1. **Sequential learner:** Go 01 → 10 (Layer 1), then 11 → 20 (Layer 2), then 21 → 30 (Layer 3), then 31 → 40 (Layer 4), then 41 → 50 (Layer 5). Each lesson builds on the previous within a layer.
 2. **Interview prep — Layer 1:** Read 01 (overview), 10 (architecture), 05 and 06 (core logic).
 3. **Interview prep — Layer 2:** Read 11 (crypto), 14 (agent identity), 15 (sessions), 20 (full flow).
 4. **Interview prep — Layer 3:** Read 21 (contracts), 25 (trust scoring), 26 (Merkle), 30 (hardening).
 5. **Interview prep — Layer 4:** Read 31 (invariant), 34 (matching engine), 36 (HMAC), 37 (disclose), 40 (hardening).
-6. **Debugging a specific area:** Jump to the relevant lesson using the tables above.
-7. **Contributing:** Read all required lessons for the layer you're modifying, then focus on the module's lesson.
+6. **Interview prep — Layer 5:** Read 41 (architecture), 45 (quality score), 47 (bundle), 49 (threats), 50 (final debrief).
+7. **Debugging a specific area:** Jump to the relevant lesson using the tables above.
+8. **Contributing:** Read all required lessons for the layer you're modifying, then focus on the module's lesson.
 
 ---
 
@@ -198,7 +232,12 @@ AgentLedger/
 |       |-- context_mismatch.py   # Over-request detection + severity + escalation (L4)
 |       |-- context_matcher.py    # 8-step matching engine + trust gate (L4)
 |       |-- context_disclosure.py # HMAC commitment + nonce release + audit write (L4)
-|       `-- context_compliance.py # ReportLab PDF export for GDPR/CCPA (L4)
+|       |-- context_compliance.py # ReportLab PDF export for GDPR/CCPA (L4)
+|       |-- workflow_registry.py  # Workflow CRUD, caching, rate limiting, execution counters (L5)
+|       |-- workflow_ranker.py    # Quality score formula + per-step candidate ranking (L5)
+|       |-- workflow_validator.py # Validation queue, state machine, spec hashing (L5)
+|       |-- workflow_context.py   # Context bundle creation, scoped overrides, approval (L5)
+|       `-- workflow_executor.py  # Execution reporting, verification, quality recompute (L5)
 |-- contracts/                    # Solidity contracts + Hardhat toolchain
 |   |-- AttestationLedger.sol     # UUPS proxy: attestation + revocation events
 |   |-- AuditChain.sol            # UUPS proxy: Merkle batch anchor events
@@ -211,7 +250,7 @@ AgentLedger/
 |-- db/                           # Schema, migrations, seed scripts
 |   `-- migrations/versions/      # 001_layer1, 002_layer2_identity, 003_layer2_sessions,
 |                                 # 004_layer3_trust_verification, 005_layer4_context,
-|                                 # 006_layer5_workflows
+|                                 # 006_layer5_workflows, 007_layer6_liability
 |-- ontology/v0.1.json            # 65 capability tags (source of truth)
 |-- spec/                         # Implementation specs + completion docs
 |-- handoffs/                     # Deployment checklists
@@ -226,4 +265,4 @@ AgentLedger/
 
 ---
 
-*Start with [Lesson 01: The Big Picture](Lesson01_BigPicture.md) — or jump to [Lesson 11: The Lock and Key](Lesson11_CryptoFoundations.md) for Layer 2, [Lesson 21: The Notary's Seal](Lesson21_TrustArchitecture.md) for Layer 3, or [Lesson 31: The Privacy Engine](Lesson31_ContextArchitecture.md) for Layer 4.*
+*Start with [Lesson 01: The Big Picture](Lesson01_BigPicture.md) — or jump to [Lesson 11: The Lock and Key](Lesson11_CryptoFoundations.md) for Layer 2, [Lesson 21: The Notary's Seal](Lesson21_TrustArchitecture.md) for Layer 3, [Lesson 31: The Privacy Engine](Lesson31_ContextArchitecture.md) for Layer 4, or [Lesson 41: The Registry That Doesn't Execute](Lesson41_WorkflowArchitecture.md) for Layer 5.*
