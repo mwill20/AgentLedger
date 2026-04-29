@@ -1,9 +1,9 @@
-# AgentLedger — Lesson Index (Layers 1, 2 & 3)
+# AgentLedger — Lesson Index (Layers 1, 2, 3 & 4)
 
 **Project:** AgentLedger — Trust & Discovery Infrastructure for the Autonomous Agent Web
-**Layers covered:** Layer 1 — Manifest Registry · Layer 2 — Identity & Credentials · Layer 3 — Trust & Verification
-**Total Lessons:** 30
-**Estimated Total Time:** 30–42 hours
+**Layers covered:** Layer 1 — Manifest Registry · Layer 2 — Identity & Credentials · Layer 3 — Trust & Verification · Layer 4 — Context Matching & Selective Disclosure
+**Total Lessons:** 40
+**Estimated Total Time:** 40–56 hours
 **Prerequisites:** Basic Python, basic SQL, basic understanding of REST APIs
 
 ---
@@ -54,6 +54,20 @@
   Lesson 26    Lesson 27    Lesson 28    Lesson 29    Lesson 30
   Merkle       Federation   Background   Live Amoy    Hardening &
   Audit Chain  & Blocklist  Workers      Acceptance   Interview
+```
+
+### Layer 4 — Context Matching & Selective Disclosure (Lessons 31–40)
+> **Prerequisites:** Complete Lessons 01, 11, and 21. Layer 4 builds on the session assertions from Lesson 15 and trust tiers from Lesson 25.
+
+```
+  Lesson 31    Lesson 32    Lesson 33    Lesson 34    Lesson 35
+  Context      Context      Mismatch     Matching     Trust
+  Architecture Profiles     Detection    Engine       Gates
+      |            |             |             |           |
+      v            v             v             v           v
+  Lesson 36    Lesson 37    Lesson 38    Lesson 39    Lesson 40
+  HMAC         Selective    Audit        Compliance   Hardening &
+  Commitment   Disclosure   Trail        Export       Interview
 ```
 
 ---
@@ -116,14 +130,34 @@
 
 ---
 
+## Layer 4 Lesson List
+
+> **Prerequisites for all Layer 4 lessons:** Complete Lessons 01, 11, and 21. Lessons 15 (session assertions) and 25 (trust tiers) are especially relevant.
+
+| # | Title | Files Covered | Time | Required? |
+|---|-------|--------------|------|-----------|
+| 31 | **The Privacy Engine** — Layer 4 Overview & Three-Part Invariant | `spec/LAYER4_SPEC.md`, `api/services/context_matcher.py`, `api/services/context_disclosure.py`, `api/routers/context.py`, `db/migrations/versions/005_layer4_context.py` | 75 min | Yes |
+| 32 | **The Permission Slip** — Context Profiles & Rule Engine | `api/services/context_profiles.py`, `api/models/context.py` | 75 min | Yes |
+| 33 | **The Watchdog** — Mismatch Detection & Escalation | `api/services/context_mismatch.py` | 60 min | Yes |
+| 34 | **The Gatekeeper** — The 8-Step Matching Engine | `api/services/context_matcher.py` | 90 min | Yes |
+| 35 | **The Trust Ladder** — Trust Gates & Sensitivity Tiers | `api/services/context_matcher.py`, `api/services/context_disclosure.py` | 60 min | Yes |
+| 36 | **The Safe Deposit Box** — HMAC Commitment Scheme | `api/services/context_disclosure.py` (lines 34–134), `api/models/context.py` | 75 min | Yes |
+| 37 | **The Key Handoff** — Selective Disclosure & Nonce Release | `api/services/context_disclosure.py` (lines 519–704) | 75 min | Yes |
+| 38 | **The Paper Trail** — Disclosure Audit History & GDPR Erasure | `api/services/context_disclosure.py` (lines 592–704), `api/routers/context.py` | 60 min | Yes |
+| 39 | **The Compliance Dossier** — PDF Export & Regulatory Package | `api/services/context_compliance.py`, `api/routers/context.py` | 60 min | Yes |
+| 40 | **The Stress Test** — Hardening, Caching, Rate Limiting & Interview Readiness | `api/services/context_matcher.py`, `api/services/context_profiles.py`, `api/services/context_disclosure.py`, `spec/LAYER4_SPEC.md` | 90 min | Yes |
+
+---
+
 ## How to Use These Lessons
 
-1. **Sequential learner:** Go 01 → 10 (Layer 1), then 11 → 20 (Layer 2), then 21 → 30 (Layer 3). Each lesson builds on the previous within a layer.
+1. **Sequential learner:** Go 01 → 10 (Layer 1), then 11 → 20 (Layer 2), then 21 → 30 (Layer 3), then 31 → 40 (Layer 4). Each lesson builds on the previous within a layer.
 2. **Interview prep — Layer 1:** Read 01 (overview), 10 (architecture), 05 and 06 (core logic).
 3. **Interview prep — Layer 2:** Read 11 (crypto), 14 (agent identity), 15 (sessions), 20 (full flow).
 4. **Interview prep — Layer 3:** Read 21 (contracts), 25 (trust scoring), 26 (Merkle), 30 (hardening).
-5. **Debugging a specific area:** Jump to the relevant lesson using the tables above.
-6. **Contributing:** Read all required lessons for the layer you're modifying, then focus on the module's lesson.
+5. **Interview prep — Layer 4:** Read 31 (invariant), 34 (matching engine), 36 (HMAC), 37 (disclose), 40 (hardening).
+6. **Debugging a specific area:** Jump to the relevant lesson using the tables above.
+7. **Contributing:** Read all required lessons for the layer you're modifying, then focus on the module's lesson.
 
 ---
 
@@ -139,9 +173,11 @@ AgentLedger/
 |   |-- models/                   # Pydantic request/response schemas
 |   |   |-- manifest.py           # Layer 1 models
 |   |   |-- identity.py           # Layer 2 models (agent, session, authorization)
-|   |   `-- layer3.py             # Layer 3 models (auditor, attestation, audit)
+|   |   |-- layer3.py             # Layer 3 models (auditor, attestation, audit)
+|   |   `-- context.py            # Layer 4 models (profile, match, disclosure)
 |   |-- routers/                  # FastAPI route handlers (thin)
-|   |   `-- identity.py           # 13 Layer 2 endpoints (3 auth tiers)
+|   |   |-- identity.py           # 13 Layer 2 endpoints (3 auth tiers)
+|   |   `-- context.py            # 10 Layer 4 endpoints (profiles, match, disclose, audit)
 |   `-- services/                 # Business logic (thick)
 |       |-- crypto.py             # Ed25519 sign/verify, canonical JSON (L2+L3 shared)
 |       |-- did.py                # did:key derivation, DID document building
@@ -157,7 +193,12 @@ AgentLedger/
 |       |-- merkle.py             # Merkle tree construction + proof verification
 |       |-- trust.py              # Trust score recomputation (6 SQL queries)
 |       |-- federation.py         # Blocklist + SSE + webhook push fan-out
-|       `-- ranker.py             # Pure scoring math (no I/O)
+|       |-- ranker.py             # Pure scoring math (no I/O)
+|       |-- context_profiles.py   # Profile CRUD + Redis 60s cache (L4)
+|       |-- context_mismatch.py   # Over-request detection + severity + escalation (L4)
+|       |-- context_matcher.py    # 8-step matching engine + trust gate (L4)
+|       |-- context_disclosure.py # HMAC commitment + nonce release + audit write (L4)
+|       `-- context_compliance.py # ReportLab PDF export for GDPR/CCPA (L4)
 |-- contracts/                    # Solidity contracts + Hardhat toolchain
 |   |-- AttestationLedger.sol     # UUPS proxy: attestation + revocation events
 |   |-- AuditChain.sol            # UUPS proxy: Merkle batch anchor events
@@ -169,7 +210,8 @@ AgentLedger/
 |                                 #          anchor_audit_batch, push_revocations
 |-- db/                           # Schema, migrations, seed scripts
 |   `-- migrations/versions/      # 001_layer1, 002_layer2_identity, 003_layer2_sessions,
-|                                 # 004_layer3_trust_verification, 005_layer4_context
+|                                 # 004_layer3_trust_verification, 005_layer4_context,
+|                                 # 006_layer5_workflows
 |-- ontology/v0.1.json            # 65 capability tags (source of truth)
 |-- spec/                         # Implementation specs + completion docs
 |-- handoffs/                     # Deployment checklists
@@ -184,4 +226,4 @@ AgentLedger/
 
 ---
 
-*Start with [Lesson 01: The Big Picture](Lesson01_BigPicture.md) — or jump to [Lesson 11: The Lock and Key](Lesson11_CryptoFoundations.md) for Layer 2, or [Lesson 21: The Notary's Seal](Lesson21_TrustArchitecture.md) for Layer 3.*
+*Start with [Lesson 01: The Big Picture](Lesson01_BigPicture.md) — or jump to [Lesson 11: The Lock and Key](Lesson11_CryptoFoundations.md) for Layer 2, [Lesson 21: The Notary's Seal](Lesson21_TrustArchitecture.md) for Layer 3, or [Lesson 31: The Privacy Engine](Lesson31_ContextArchitecture.md) for Layer 4.*
