@@ -1,5 +1,45 @@
 # AgentLedger Process Doc
 
+## Layer 5 Completion Log
+
+**Date:** 2026-04-28
+**Milestone:** Layer 5 complete - Orchestration & Taste
+**Verification:** 319 tests passed; 81% coverage across workflow services; cached rank p95 4.49ms at 100 concurrent requests
+
+Layer 5 is complete across all six phases:
+
+1. Phase 1 - workflow registry CRUD, migration 006, workflow steps, and test fixtures.
+2. Phase 2 - human validation queue, validator assignment, deterministic spec hash, and published-spec immutability.
+3. Phase 3 - ranking engine, quality score computation, trust-tier filtering, and compound Redis rank cache keys.
+4. Phase 4 - workflow context bundles, scoped profile overrides, approval flow, and Layer 4 can_disclose integration.
+5. Phase 5 - execution outcome reporting, atomic counters, async verification against Layer 4 disclosure evidence, and quality recompute.
+6. Phase 6 - workflow read caching, cache invalidation, workflow query rate limits, Layer 3 revocation-triggered re-validation, coverage, and load verification.
+
+## Layer 5 Key Decisions
+
+- **Nullable `workflow_steps.service_id`:** Steps remain flexible by default. A null `service_id` means any service capable of the step's ontology tag can be ranked; a non-null value pins the workflow to a specific service and participates in revocation-triggered re-validation.
+- **Optional pinning with required-step revocation cascade:** If Layer 3 revokes a pinned service used by a required workflow step, Layer 5 flags the published workflow for re-validation and clears stale workflow caches.
+- **Compound rank cache key:** `GET /workflows/{id}/rank` caches by `workflow_id`, `geo`, `pricing_model`, and `agent_did`. This prevents filtered ranking results from contaminating unfiltered or agent-specific cache hits.
+- **`WORKFLOW_VERIFY_SYNC` test mode:** Execution verification runs asynchronously in production but can run inline in tests so verification and quality-score changes are deterministic.
+- **Scoped profile FK fix:** `workflow_context_bundles.scoped_profile_id` references `workflow_scoped_profiles(id)`, not base `context_profiles(id)`, because scoped overrides are workflow-local records.
+- **Atomic execution counters:** Execution, success, and failure counts use a single SQL `UPDATE ... CASE` statement rather than application read-modify-write.
+- **Layer 4 evidence over reporter trust:** Reported outcomes start unverified and only gain verification weight when Layer 4 disclosure evidence exists for required workflow steps.
+
+## Closed Layer 5 Questions
+
+- **Should workflow steps require a fixed service?** Closed. `service_id` is nullable with optional pinning to preserve ranking flexibility while still supporting deterministic, pinned workflows.
+- **How should filtered rank results cache?** Closed. Cache keys include all ranking filters plus `agent_did`.
+- **How should async verification be testable?** Closed. Use the `WORKFLOW_VERIFY_SYNC` environment/test flag to execute verification inline.
+- **Where should scoped profile bundles point?** Closed. Bundle `scoped_profile_id` points to `workflow_scoped_profiles`.
+- **What happens when a pinned service is revoked?** Closed. Required pinned-service revocation moves the workflow back to review and invalidates caches.
+- **Can unverified success reports inflate workflow quality?** Closed. The verification-rate cap keeps quality_score at or below 70.0 when verification_rate is below 0.5.
+
+## Layer 5 Follow-Up Boundaries
+
+- Layer 6 should treat `workflow_executions`, `workflow_context_bundles`, and Layer 4 `context_disclosures` as stable liability inputs.
+- Layer 6 should use workflow quality_score as a risk signal, not as a final liability determination.
+- Workflow execution remains outside AgentLedger. Agent platforms execute; AgentLedger validates, ranks, audits, and scores.
+
 ## Layer 4 Completion Log
 
 **Date:** 2026-04-28
