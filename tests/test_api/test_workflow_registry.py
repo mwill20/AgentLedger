@@ -549,7 +549,7 @@ def test_report_execution_rejects_unpublished_workflow():
     assert response.detail == "workflow not found or not published"
 
 
-def test_report_execution_inserts_row_and_increments_counters():
+def test_report_execution_inserts_row_and_increments_counters(monkeypatch):
     """Service should write execution row and update success_count for success."""
     workflow_id = uuid4()
     execution_id = uuid4()
@@ -569,6 +569,15 @@ def test_report_execution_inserts_row_and_increments_counters():
             [],                            # UPDATE workflows quality_score
         ]
     )
+    snapshot_calls = []
+
+    async def fake_create_snapshot(*, db, execution_id):
+        snapshot_calls.append(execution_id)
+
+    monkeypatch.setattr(
+        "api.services.liability_snapshot.create_snapshot",
+        fake_create_snapshot,
+    )
 
     response = asyncio.run(
         workflow_registry.report_execution(
@@ -580,6 +589,7 @@ def test_report_execution_inserts_row_and_increments_counters():
 
     assert response.execution_id == execution_id
     assert response.verified is False
+    assert snapshot_calls == [execution_id]
     assert db.commit_count == 2
     assert any("INSERT INTO workflow_executions" in sql for sql, _ in db.executed)
     assert any("CASE WHEN :outcome = 'success'" in sql for sql, _ in db.executed)

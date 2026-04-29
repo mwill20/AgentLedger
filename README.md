@@ -1,12 +1,12 @@
 # AgentLedger
 
-Discovery, identity, trust, context, and workflow registry infrastructure for the autonomous agent web.
+Discovery, identity, trust, context, workflow, and liability infrastructure for the autonomous agent web.
 
-AgentLedger is infrastructure, not an orchestration runtime. It registers services, verifies identities, computes trust signals, controls context disclosure, and publishes validated workflow specifications that agent platforms can execute.
+AgentLedger is infrastructure, not an orchestration runtime. It registers services, verifies identities, computes trust signals, controls context disclosure, publishes validated workflow specifications that agent platforms can execute, and preserves liability evidence for dispute and regulatory workflows.
 
 ## Current Status
 
-Layers 1-5 are implemented and tested.
+Layers 1-6 are implemented and tested.
 
 | Layer | Capability | Status |
 |---|---|---|
@@ -15,19 +15,26 @@ Layers 1-5 are implemented and tested.
 | Layer 3 | Auditor network, attestations, revocations, audit chain, trust scoring | Complete |
 | Layer 4 | Context profiles, mismatch detection, matching, selective disclosure, compliance PDF export | Complete |
 | Layer 5 | Workflow registry, validation queue, ranking, context bundles, execution outcome quality loop | Complete |
+| Layer 6 | Liability snapshots, dispute claims, evidence gathering, attribution, regulatory exports, hardening | Complete |
 
 Latest local verification:
 
 ```bash
 pytest tests -q
-# 319 passed
+# 346 passed
 ```
 
-Layer 5 Phase 6 verification:
+Layer 5 hardening verification:
 
 - Workflow service coverage: 81% total across Layer 5 service modules
 - Cached `GET /v1/workflows`: p95 5.12ms at 100 concurrent requests
 - Cached `GET /v1/workflows/{id}/rank`: p95 4.49ms at 100 concurrent requests
+
+Layer 6 hardening verification:
+
+- Claim filing rate limit: 10 claims per `claimant_did` per hour
+- Redis claim status cache: 60-second TTL, refreshed on every claim status transition
+- `GET /v1/liability/snapshots/{execution_id}` route handler p95 under 200ms at 100 concurrent calls
 
 ## Quick Start
 
@@ -119,6 +126,18 @@ Protected endpoints require `X-API-Key: dev-local-only` unless using bearer cred
 - `POST /v1/workflows/context/bundle/{bundle_id}/approve`
 - `POST /v1/workflows/{workflow_id}/executions`
 
+### Layer 6: Liability and Regulatory Evidence
+
+- `GET /v1/liability/snapshots/{execution_id}`
+- `GET /v1/liability/snapshots`
+- `POST /v1/liability/claims`
+- `GET /v1/liability/claims/{claim_id}`
+- `POST /v1/liability/claims/{claim_id}/gather`
+- `POST /v1/liability/claims/{claim_id}/determine`
+- `POST /v1/liability/claims/{claim_id}/resolve`
+- `POST /v1/liability/claims/{claim_id}/appeal`
+- `GET /v1/liability/compliance/export`
+
 ## Architecture
 
 The current build provides these core capabilities:
@@ -133,6 +152,10 @@ The current build provides these core capabilities:
 8. Release disclosure nonces only after trust re-verification and append-only audit logging.
 9. Export context compliance records as PDF.
 10. Publish human-validated workflow specs with ranking and outcome quality signals.
+11. Capture synchronous liability snapshots during workflow execution reporting.
+12. Gather immutable dispute evidence across Layers 1-6.
+13. Compute liability attribution weights from evidence-backed factor evaluation.
+14. Export liability compliance PDFs for EU AI Act, HIPAA, SEC, and full-scope reviews.
 
 ## Tech Stack
 
@@ -237,6 +260,7 @@ Canonical specs:
 - [Layer 3 spec](spec/LAYER3_SPEC.md)
 - [Layer 4 spec](spec/LAYER4_SPEC.md)
 - [Layer 5 spec](spec/LAYER5_SPEC.md)
+- [Layer 6 spec](spec/LAYER6_SPEC.md)
 
 Completion summaries:
 
@@ -244,13 +268,3 @@ Completion summaries:
 - [Layer 2 completion](spec/LAYER2_COMPLETION.md)
 - [Layer 3 completion](spec/LAYER3_COMPLETION.md)
 - [Layer 5 completion](spec/LAYER5_COMPLETION.md)
-
-## Layer 6 Handoff
-
-Layer 6 is expected to build on:
-
-- `workflow_executions` for liability attribution.
-- `workflow_context_bundles` plus Layer 4 `context_disclosures` for regulatory packages.
-- `workflows.quality_score` for risk and insurance underwriting.
-- `workflow_validations.validator_did` for validator accountability.
-- pinned service revocation state from Layer 3 for dispute resolution.

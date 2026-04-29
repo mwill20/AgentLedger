@@ -6,6 +6,10 @@ import asyncio
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import pytest
+from fastapi import HTTPException
+from sqlalchemy.exc import SQLAlchemyError
+
 from api.models.workflow import ExecutionReportResponse
 from api.routers import workflows as workflows_router
 from api.services import workflow_executor
@@ -131,7 +135,7 @@ def test_report_execution_route_returns_201_unverified(
     }
 
 
-def test_report_execution_outcome_inserts_and_uses_atomic_counter_update():
+def test_report_execution_outcome_inserts_and_uses_atomic_counter_update(monkeypatch):
     """Reporting an outcome should insert false-verified row and update counters."""
     workflow_id = uuid4()
     execution_id = uuid4()
@@ -152,6 +156,15 @@ def test_report_execution_outcome_inserts_and_uses_atomic_counter_update():
             [],
             [],
         ]
+    )
+    snapshot_calls = []
+
+    async def fake_create_snapshot(*, db, execution_id):
+        snapshot_calls.append((db, execution_id, db.commit_count))
+
+    monkeypatch.setattr(
+        "api.services.liability_snapshot.create_snapshot",
+        fake_create_snapshot,
     )
 
     response = asyncio.run(
@@ -184,11 +197,12 @@ def test_report_execution_outcome_inserts_and_uses_atomic_counter_update():
     assert "CASE WHEN :outcome = 'success'" in counter_sql
     assert "CASE WHEN :outcome = 'failure'" in counter_sql
     assert counter_params["outcome"] == "success"
+    assert snapshot_calls == [(db, execution_id, 0)]
     assert db.commit_count == 2
     assert f"workflow:rank:{workflow_id}:any:any:anonymous" not in redis.store
 
 
-def test_partial_outcome_increments_neither_success_nor_failure_directly():
+def test_partial_outcome_increments_neither_success_nor_failure_directly(monkeypatch):
     """Partial outcomes should rely on CASE SQL and only increment execution_count."""
     workflow_id = uuid4()
     execution_id = uuid4()
@@ -203,6 +217,10 @@ def test_partial_outcome_increments_neither_success_nor_failure_directly():
             [],
             [],
         ]
+    )
+    monkeypatch.setattr(
+        "api.services.liability_snapshot.create_snapshot",
+        lambda **kwargs: _async_noop(),
     )
 
     asyncio.run(
@@ -226,6 +244,55 @@ def test_partial_outcome_increments_neither_success_nor_failure_directly():
         params for sql, params in db.executed if "CASE WHEN :outcome" in sql
     )
     assert counter_params["outcome"] == "partial"
+
+
+async def _async_noop():
+    """Async no-op used by monkeypatched collaborators."""
+
+
+def test_snapshot_failure_rolls_back_execution_report(monkeypatch):
+    """Snapshot creation failure should fail closed before committing execution."""
+    workflow_id = uuid4()
+    execution_id = uuid4()
+    db = _InspectableSession(
+        rows=[
+            [{"id": workflow_id, "status": "published"}],
+            [{"did": AGENT_DID}],
+            [{"id": execution_id}],
+            [],
+        ]
+    )
+
+    async def fail_create_snapshot(*, db, execution_id):
+        raise SQLAlchemyError("snapshot insert failed")
+
+    monkeypatch.setattr(
+        "api.services.liability_snapshot.create_snapshot",
+        fail_create_snapshot,
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        asyncio.run(
+            workflow_executor.report_execution_outcome(
+                workflow_id=workflow_id,
+                agent_did=AGENT_DID,
+                context_bundle_id=None,
+                outcome="success",
+                steps_completed=2,
+                steps_total=2,
+                failure_step_number=None,
+                failure_reason=None,
+                duration_ms=4200,
+                db=db,
+                redis=None,
+                verify_sync=False,
+            )
+        )
+
+    assert exc_info.value.status_code == 500
+    assert "failed to report execution" in exc_info.value.detail
+    assert db.commit_count == 0
+    assert db.rollback_count == 1
 
 
 def test_verify_execution_sets_verified_true_when_disclosures_cover_required_steps():

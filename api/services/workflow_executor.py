@@ -311,6 +311,12 @@ async def report_execution_outcome(
             workflow_id=workflow_id,
             outcome=outcome,
         )
+        from api.services import liability_snapshot
+
+        await liability_snapshot.create_snapshot(
+            db=db,
+            execution_id=execution_id,
+        )
         await db.commit()
     except HTTPException:
         await db.rollback()

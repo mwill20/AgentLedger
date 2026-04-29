@@ -14,6 +14,7 @@ from api.routers import (
     federation,
     health,
     identity,
+    liability,
     manifests,
     ontology,
     search,
@@ -58,3 +59,4 @@ app.include_router(federation.router, prefix="/v1", tags=["federation"])
 app.include_router(chain.router, prefix="/v1", tags=["chain"])
 app.include_router(context.router, prefix="/v1", tags=["context"])
 app.include_router(workflows.router, prefix="/v1", tags=["workflows"])
+app.include_router(liability.router, prefix="/v1", tags=["liability"])
