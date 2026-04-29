@@ -1,7 +1,7 @@
 # AgentLedger
 
 <p align="center">
-  <img src="docs/AgentLedger_Logo.png" alt="AgentLedger logo" width="220">
+  <img src="docs/AgentLedger_Logo.png" alt="AgentLedger logo" width="880">
 </p>
 
 AgentLedger is local proof-of-concept infrastructure for discovery, identity, trust, context disclosure, workflow validation, and liability evidence in the autonomous agent web.
