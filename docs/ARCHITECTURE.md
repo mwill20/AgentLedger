@@ -352,14 +352,14 @@ sequenceDiagram
 | Ontology seed | `db/seed_ontology.py` loads `ontology/v0.1.json`. |
 | Migrations | Alembic revisions `001` through `007`. |
 | OpenAPI | Served by FastAPI at `/docs`. |
-| License | TODO: no root `LICENSE` file is present. |
+| License | MIT license in the root `LICENSE` file. |
 | Production readiness | Not claimed for v0.1.0. |
 
 ## Architecture Risks And Follow-Ups
 
 | Risk / Gap | Current Status | Follow-Up |
 |---|---|---|
-| No selected license | Usage rights unclear. | Owner must choose and add a license. |
+| License obligations | MIT permits broad reuse but keeps notice and warranty disclaimer obligations. | Downstream users should retain the license notice and complete their own legal review. |
 | Redis fail-open behavior | Suitable for POC availability. | Reassess for production abuse controls. |
 | Layer 3 testnet deployment deferred | Contract code exists but live deployment is not default. | Configure RPC, signer, contracts, and funded testnet wallet. |
 | Model-mode semantic search details | `all-MiniLM-L6-v2` referenced; license/version details not documented. | Add authoritative model source and license before publication claims. |

@@ -54,8 +54,10 @@ docker compose logs redis --tail 100
 | Security review | Deferred for POC | TODO |
 | Legal review | Deferred for POC | TODO |
 | Database backup verification | TODO | TODO |
-| Test suite run | Before release tags | Maintainer |
+| Test suite run | On pushes to `main`, pull requests, and before release tags | GitHub Actions + maintainer |
 | Layer 3 testnet deployment retry | When faucet/testnet credentials are available | TODO |
+| Branch protection | Owner should require CI before merging to `main` | TODO |
+| Private vulnerability reporting | Owner should enable or confirm in GitHub repository settings | TODO |
 
 ## Drift Monitoring
 

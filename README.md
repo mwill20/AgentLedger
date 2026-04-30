@@ -32,7 +32,7 @@ This project is not intended for production processing of real user data without
 
 ## Project Status
 
-Current status: v0.1.0 local proof of concept.
+Current status: v0.1.x local proof of concept. Latest repository release notes: [v0.1.1](spec/RELEASE_NOTES_v0.1.1.md).
 
 Layers 1-6 are implemented and tested locally.
 
@@ -95,7 +95,7 @@ Do not treat v0.1.0 as production-ready.
 | Python | 3.11+ in Docker image; host-side tests in this workspace used Python 3.12. |
 | PostgreSQL | Provided by Docker Compose as `pgvector/pgvector:pg15`. |
 | Redis | Provided by Docker Compose as `redis:7-alpine`. |
-| Node.js/npm | Required only for Solidity contract work. Version: TODO. |
+| Node.js/npm | Required only for Solidity contract work. Observed locally with Node.js `v22.20.0` and npm `10.9.3`. |
 | GPU | Not required for local POC mode. |
 | External services | Not required for local POC mode. Layer 3 testnet writes require RPC, deployed contracts, signer key, and testnet funds. |
 
@@ -211,6 +211,7 @@ Current recorded local validation:
 | Check | Result | Notes |
 |---|---|---|
 | Full test suite | 346 passed | Observed in this workspace before this documentation update. |
+| GitHub Actions CI | Configured | Runs `pytest -p pytest_asyncio tests -q` on pushes to `main` and pull requests. |
 | Health endpoint | HTTP 200 | Local Docker stack. |
 | OpenAPI docs | HTTP 200 | Local Docker stack. |
 | Ontology endpoint | HTTP 200, 65 tags | Requires `X-API-Key`. |
@@ -245,7 +246,7 @@ Key limitations:
 
 - Local-only POC deployment target.
 - Layer 3 testnet deployment deferred.
-- No root license file yet.
+- MIT licensed; downstream users remain responsible for their own legal, security, and compliance review.
 - Legal/security reviews deferred for POC.
 - Production monitoring, backups, hosted deployment, and resource benchmarks are TODO.
 
@@ -281,14 +282,14 @@ Completion and release docs:
 - [Layer 1 completion](spec/LAYER1_COMPLETION.md)
 - [Layer 2 completion](spec/LAYER2_COMPLETION.md)
 - [Layer 3 completion](spec/LAYER3_COMPLETION.md)
+- Layer 4 completion is documented through [Layer 4 spec](spec/LAYER4_SPEC.md), Lessons 31-40, and the final project readiness docs.
 - [Layer 5 completion](spec/LAYER5_COMPLETION.md)
 - [Layer 6 completion](spec/LAYER6_COMPLETION.md)
 - [v0.1.0 release notes](spec/RELEASE_NOTES_v0.1.0.md)
+- [v0.1.1 release notes](spec/RELEASE_NOTES_v0.1.1.md)
 - [operations runbook](spec/OPERATIONS_RUNBOOK.md)
 - [environment matrix](spec/ENV_MATRIX.md)
 - [legal scope note](spec/LEGAL_SCOPE_NOTE.md)
-
-TODO: Add or link a Layer 4 completion summary if one is intended to be part of the release docs.
 
 ## Access And Availability
 
@@ -296,7 +297,7 @@ TODO: Add or link a Layer 4 completion summary if one is intended to be part of 
 |---|---|
 | Repository | `https://github.com/mwill20/AgentLedger.git` |
 | Project status | Local proof of concept. |
-| Open source status | TODO: depends on selected license. |
+| Open source status | MIT licensed. |
 | Dataset access | Not applicable; no training dataset is included. |
 | Model access | Optional sentence-transformers model path; see [docs/MODEL_CARD.md](docs/MODEL_CARD.md). |
 | External service access | Not required for local POC; required for live Layer 3 testnet writes. |

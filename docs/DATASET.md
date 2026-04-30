@@ -16,7 +16,7 @@ AgentLedger uses:
 | Field | Description |
 |---|---|
 | Source | Repository-local file: `ontology/v0.1.json`. |
-| License | TODO: clarify ontology license after repository license is selected. |
+| License | Covered by the repository MIT license unless a future ontology-specific license is added. |
 | Version | `0.1` as returned by `/v1/ontology`. |
 | Number of tags | 65 observed in local `/v1/ontology` response. |
 | Domains | TRAVEL, FINANCE, HEALTH, COMMERCE, PRODUCTIVITY. |

@@ -11,7 +11,7 @@ This guide describes the local proof-of-concept setup for AgentLedger.
 | Docker Compose | Required for PostgreSQL, Redis, API, worker, and beat services. |
 | PostgreSQL | Provided by Docker Compose using `pgvector/pgvector:pg15`. |
 | Redis | Provided by Docker Compose using `redis:7-alpine`. |
-| Node.js/npm | Required only for Layer 3 Solidity contract development and tests. Version: TODO. |
+| Node.js/npm | Required only for Layer 3 Solidity contract development and tests. Observed locally with Node.js `v22.20.0` and npm `10.9.3`. |
 | GPU | Not required for local POC mode. |
 | External APIs | Not required for local POC mode. Layer 3 testnet deployment requires RPC access and funded testnet credentials. |
 
