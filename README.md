@@ -1,4 +1,3 @@
-# AgentLedger
 
 <p align="center">
   <img src="docs/AgentLedger_Logo.png" alt="AgentLedger logo" width="880">
