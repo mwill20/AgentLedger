@@ -1,8 +1,10 @@
 # Lesson 09: The Proving Ground -- Testing and Load Testing
 
+> **Beginner frame:** Tests are controlled rehearsals for failure. AgentLedger uses unit, integration, and load tests to prove that registry behavior is repeatable before anyone relies on its records for security decisions.
+
 ## Welcome Back, Systems Engineer!
 
-Every feature we've built across Lessons 01-08 needs to be verified. How do you test an async FastAPI app without a real database? How do you simulate 100 concurrent AI agents hitting the API? Today we dissect the **testing infrastructure** -- the shared fixtures that enable fast isolated tests, the monkeypatching patterns that replace database calls, and the Locust load test harness that validated production readiness.
+Every feature we've built across Lessons 01-08 needs to be verified. How do you test an async FastAPI app without a real database? How do you simulate 100 concurrent AI agents hitting the API? Today we dissect the **testing infrastructure** -- the shared fixtures that enable fast isolated tests, the monkeypatching patterns that replace database calls, and the Locust load test harness that validated POC readiness.
 
 **Goal:** Understand the testing patterns, run the test suite, and interpret load test results.
 **Time:** 60 minutes

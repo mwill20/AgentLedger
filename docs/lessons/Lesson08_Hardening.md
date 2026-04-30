@@ -1,8 +1,10 @@
 # Lesson 08: The Bouncer -- Rate Limiting, Typosquat Detection, and Hardening
 
+> **Beginner frame:** Hardening is the set of guardrails that keeps a useful API from becoming an easy target. Rate limits slow abuse, typosquat checks flag suspicious lookalikes, and sanitization keeps unsafe input away from deeper systems.
+
 ## Welcome Back, Systems Engineer!
 
-The API works. Services register, search returns results, the crawler verifies domains. But what stops a malicious actor from flooding the API with 10,000 requests per second? What prevents `g00gle.com` from impersonating `google.com`? Today we dissect the **hardening layer** -- rate limiting, typosquat detection, and the security decisions that make AgentLedger production-ready.
+The API works. Services register, search returns results, the crawler verifies domains. But what stops a malicious actor from flooding the API with 10,000 requests per second? What prevents `g00gle.com` from impersonating `google.com`? Today we dissect the **hardening layer** -- rate limiting, typosquat detection, and the security decisions that make AgentLedger POC-hardened.
 
 **Goal:** Understand the pure ASGI rate limiting middleware, the Levenshtein-based typosquat detector, and why each security decision was made.
 **Time:** 60 minutes

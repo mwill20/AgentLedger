@@ -1,5 +1,7 @@
 # Lesson 20 — The Final Debrief: Full Layer 2 Flow & Interview Readiness
 
+> **Beginner frame:** Layer 2 answers "who is acting, and are they still allowed to act?" This debrief ties keys, DIDs, credentials, sessions, revocation, and human approval into one identity story.
+
 **Layer:** 2 — Identity & Credentials  
 **Source:** `spec/LAYER2_COMPLETION.md`, all Layer 2 files  
 **Prerequisites:** Lessons 11–19 — this lesson synthesizes everything  

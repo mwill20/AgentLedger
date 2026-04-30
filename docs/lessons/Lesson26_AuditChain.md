@@ -1,5 +1,7 @@
 # 🎓 Lesson 26: The Fingerprint File — Audit Records & Merkle Batching
 
+> **Beginner frame:** A Merkle batch is a compact fingerprint for many records. AgentLedger can prove one audit record belongs to a sealed batch without putting every private detail on-chain.
+
 ## 🛡️ Welcome Back, Agent Architect!
 
 A forensic database doesn't store photographs of suspects — it stores fingerprint hashes. A hash uniquely identifies an object without revealing its contents, and the match is mathematically verifiable.

@@ -1,5 +1,9 @@
 # Lesson 60: The Final Debrief — Full Layer 6 Flow & Interview Readiness
 
+> **Beginner frame:** The full AgentLedger stack is an accountability chain for autonomous agents. Each layer answers one question: what exists, who acted, what was trusted, what context moved, how workflows performed, and what evidence remains when something goes wrong.
+
+> **Legal scope:** The final stack produces trustworthy activity records and review evidence. It does not provide binding adjudication, legal advice, insurance, escrow, or regulatory certification.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** All Layer 6 files + `spec/LAYER6_COMPLETION.md`
 **Prerequisites:** Lessons 51–59

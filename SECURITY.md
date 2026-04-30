@@ -85,6 +85,6 @@ Use synthetic data for examples and tests.
 
 ## Vulnerability Reporting
 
-TODO: Add a security contact email or private reporting channel.
+For sensitive vulnerabilities, use GitHub private vulnerability reporting for this repository if enabled.
 
-Until a private channel is defined, open a GitHub issue for non-sensitive security documentation issues only. Do not include secrets or exploitable details in a public issue.
+If private vulnerability reporting is not enabled, contact the maintainer out of band before sharing exploitable details. Open a GitHub issue for non-sensitive security documentation issues only. Do not include secrets, private keys, live credentials, personal data, or exploitable details in a public issue.

@@ -1,4 +1,6 @@
-﻿# Lesson 45: The Quality Ledger â€” Composite Scoring Engine
+# Lesson 45: The Quality Ledger — Composite Scoring Engine
+
+> **Beginner frame:** A quality score is a report card that should improve only when evidence improves. AgentLedger combines validation and execution history so workflows cannot rank highly on claims alone.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_ranker.py` (lines 69â€“161), `api/services/workflow_validator.py` (lines 30â€“44)

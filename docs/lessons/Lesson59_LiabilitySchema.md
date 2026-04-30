@@ -1,5 +1,7 @@
 # Lesson 59: The Foundation — Migration 007 & Layer 6 Schema
 
+> **Beginner frame:** The liability schema is the case-file cabinet. It stores snapshots, claims, evidence, determinations, and export logs in a way later reviewers can query and audit.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `db/migrations/versions/007_layer6_liability.py`
 **Prerequisites:** Lesson 51

@@ -1,4 +1,8 @@
-# Lesson 58: Hardening the Trust Layer — Rate Limits, Caching & Load Testing
+# Lesson 58: Hardening the Liability Layer — Rate Limits, Caching & Load Testing
+
+> **Beginner frame:** Liability hardening keeps dispute infrastructure from becoming an abuse target. Rate limits protect evidence gathering, and caches absorb status polling without changing the database as the source of truth.
+
+> **Legal scope:** Layer 6 is evidence infrastructure. It does not replace legal review, insurance underwriting, payment settlement, or production compliance controls.
 
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/services/liability_claims.py`, `api/services/liability_snapshot.py`, `spec/LAYER6_COMPLETION.md`

@@ -1,5 +1,7 @@
 # 🎓 Lesson 03: Mission Control — Configuration and Dependencies
 
+> **Beginner frame:** Configuration is the control panel that tells AgentLedger which database, cache, keys, and runtime modes to use. Dependency injection is the wiring that hands those choices to the right code without hiding them in global state.
+
 ## 🛡️ Welcome Back, Systems Engineer!
 
 How does AgentLedger know which database to connect to, what API keys to accept, and whether to load a 100MB ML model or use a fast hash fallback? 🔍 Today we're exploring **configuration and dependency injection** — the "mission control" that wires every component together.

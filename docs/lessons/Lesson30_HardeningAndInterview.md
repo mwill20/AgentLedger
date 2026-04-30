@@ -1,5 +1,13 @@
 # 🎓 Lesson 30: The Audit Examiner — Hardening, Load Testing & Interview Readiness
 
+> **Beginner frame:** Layer 3 hardening is an audit of the trust layer itself. It asks what happens if auditors collude, chains reorganize, blocklists are poisoned, or audit records are tampered with.
+
+## Verification Status Note
+
+The threat model applies to both local and configured Web3 modes, but chain-finality claims only apply when live chain writes are actually configured. For v0.1.0, treat the lessons as POC hardening guidance plus documented gaps, not a production security certification.
+
+---
+
 ## 🔬 Welcome Back, Agent Architect!
 
 You've built the trust layer, understood every component, and traced events from API call to on-chain confirmation. Now comes the final test: not "does it work?" but "does it hold under adversarial pressure?"
@@ -101,7 +109,7 @@ AND block_number <= :latest_block - :confirmation_blocks
 
 Where `confirmation_blocks = 20` (configurable via `CHAIN_CONFIRMATION_BLOCKS` env var).
 
-On Polygon PoS (the live deployment), reorgs exceeding 20 blocks are **cryptoeconomically impractical** — they would require an attacker to control more than 50% of the staked POL and undo ~40 seconds of finalized blocks. The 20-block window is the standard defense against short reorgs on PoS chains.
+On Polygon PoS (when live-chain mode is configured), reorgs exceeding 20 blocks are **cryptoeconomically impractical** — they would require an attacker to control more than 50% of the staked POL and undo ~40 seconds of finalized blocks. The 20-block window is the standard defense against short reorgs on PoS chains.
 
 **What breaks if removed:** Without the confirmation window, a trust score update would fire the moment an event is indexed — potentially from a block that gets reorged out within the next few seconds. The service would show `trust_tier=4` based on an event that no longer exists.
 
@@ -226,7 +234,7 @@ Layer 3 introduced per-prefix short-TTL caching using `runtime_cache` (an in-mem
 | `GET /v1/chain/status` | 100ms |
 | `GET /v1/federation/blocklist` | 84ms |
 
-**Why p95=92ms is significant:** The Layer 3 spec target was `p95 < 500ms @ 100 concurrent`. The actual result (92ms) is 5× below the target. The median of 8ms shows that most requests hit the cache and return before any DB query completes. The 0 failure rate is the critical production readiness signal: no timeouts, no 5xx, no dropped connections under 100 concurrent users.
+**Why p95=92ms is significant:** The Layer 3 spec target was `p95 < 500ms @ 100 concurrent`. The actual result (92ms) is 5× below the target. The median of 8ms shows that most requests hit the cache and return before any DB query completes. The 0 failure rate is the critical POC readiness signal: no timeouts, no 5xx, no dropped connections under 100 concurrent users.
 
 **What p95=92ms with median=8ms tells you:** The 8ms median represents cached responses. The 92ms p95 represents cache misses that require a DB round-trip. The gap (8ms → 92ms) shows the caching strategy is working — the cache hit rate is high enough that most users see sub-10ms latency.
 

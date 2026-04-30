@@ -1,5 +1,7 @@
 # Lesson 37: The Key Handoff — Selective Disclosure & Nonce Release
 
+> **Beginner frame:** Selective disclosure means handing over only the fields policy permits. AgentLedger uses it to minimize context exposure while preserving evidence of the decision.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_disclosure.py` (lines 519–704)  
 **Prerequisites:** Lessons 35, 36  

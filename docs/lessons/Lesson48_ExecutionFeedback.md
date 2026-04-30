@@ -1,4 +1,6 @@
-﻿# Lesson 48: The Feedback Machine â€” Execution Outcome Reporting
+# Lesson 48: The Feedback Machine — Execution Outcome Reporting
+
+> **Beginner frame:** Execution feedback is how real outcomes update workflow quality. A workflow's reputation should reflect what happened after publication, not just how good the spec looked.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_executor.py`

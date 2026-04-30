@@ -1,5 +1,7 @@
 # 🎓 Lesson 01: The Big Picture — What AgentLedger Builds and Why
 
+> **Beginner frame:** AgentLedger is easiest to understand as a trustworthy activity record system for AI agents: part service directory, part inspection log, part evidence trail. This lesson explains the "what" and "why" before the implementation details, so every later layer connects back to discovery, provenance, auditability, and security visibility.
+
 ## 🛡️ Welcome, Future AgentLedger Engineer!
 
 What happens when billions of AI agents need to find, trust, and transact with services on the open web? 🔍 Today we're exploring **AgentLedger Layer 1** — the "phone book and credit bureau" that lets any AI agent discover any service, verify its claims, and decide whether to trust it.
@@ -86,7 +88,7 @@ Every choice in the stack is documented in `spec/LAYER1_SPEC.md` (lines 32-44). 
 | Cache | **Redis 7** | Query result caching (60s TTL) and per-IP rate limiting with atomic INCR/EXPIRE |
 | Crawler | **Celery + Redis** | Async background workers for manifest fetching — separate from the API process |
 | Embeddings | **sentence-transformers** (all-MiniLM-L6-v2) | Local model, no API dependency, 384-dim vectors, good semantic quality |
-| Auth | **API key** (X-API-Key header) | Simple for v0.1 — OAuth2 planned for v0.2 |
+| Auth | **API key** (X-API-Key header) | Simple for v0.1 — OAuth2 is outside the v0.1 POC scope |
 | Containerization | **Docker + Docker Compose** | Single `docker compose up` launches the entire stack |
 
 `★ Insight ─────────────────────────────────────`
@@ -181,9 +183,9 @@ This is just as important as what it does include:
 | Agent identity verification | Layer 2 | Identity credentials are a separate concern |
 | Third-party trust attestation | Layer 3 | Requires auditor network |
 | Cross-registry federation | Layer 3 | Requires inter-registry protocol |
-| Audit chain / liability | Layer 6 | Legal and insurance layer |
-| OAuth2 auth | v0.2 | API key is sufficient for v0.1 |
-| Automated capability probing | v0.2 | Requires opt-in protocol design |
+| Audit chain / liability | Layer 6 | Evidence and attribution layer; not legal ruling or insurance |
+| OAuth2 auth | Future scope | API key is sufficient for the v0.1 POC |
+| Automated capability probing | Future scope | Requires opt-in protocol design |
 
 ---
 

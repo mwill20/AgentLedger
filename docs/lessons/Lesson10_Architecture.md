@@ -1,5 +1,7 @@
 # Lesson 10: The Architect's View -- Full Architecture Deep Dive
 
+> **Beginner frame:** Architecture is the map of how data moves. This lesson connects routers, services, workers, PostgreSQL, Redis, and Docker so the codebase reads like one system instead of unrelated files.
+
 ## Welcome Back, Systems Engineer!
 
 You've now explored the AgentLedger Layer 1 foundation and the current Layer 2 identity stack. This final lesson synthesizes everything into an **end-to-end architectural understanding** -- how data flows through the system, why each design decision was made, and where later layers extend the foundation.

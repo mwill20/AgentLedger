@@ -1,5 +1,7 @@
 # Lesson 35: The Trust Ladder — Trust Gates & Sensitivity Enforcement
 
+> **Beginner frame:** Trust gates are vault doors for data. The more sensitive the field, the more trust a service needs before AgentLedger allows disclosure.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_matcher.py`, `api/services/context_mismatch.py`  
 **Prerequisites:** Lessons 33, 34  

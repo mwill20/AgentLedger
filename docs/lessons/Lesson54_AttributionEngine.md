@@ -1,5 +1,9 @@
 # Lesson 54: The Scales of Justice — The 11-Factor Attribution Engine
 
+> **Beginner frame:** Attribution is evidence-weighted responsibility analysis, not a courtroom verdict. AgentLedger computes structured weights so reviewers can see which facts moved responsibility toward each actor.
+
+> **Legal scope:** The attribution engine produces review material. It is not a binding legal ruling, insurance decision, payment settlement, or regulatory determination.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/services/liability_attribution.py`
 **Prerequisites:** Lesson 53
@@ -300,4 +304,4 @@ A: The weights remain at 25/25/25/25 after normalization (equal attribution). Co
 
 ## Next Lesson
 
-**Lesson 55 — The Regulatory Dossier: Compliance Export Generation** covers `liability_compliance.py` — the EU AI Act, HIPAA, and SEC-ready PDF generation flow, the `ExportScope` dataclass, jurisdiction-specific scope validation, and how the export combines evidence from all six layers.
+**Lesson 55 — The Regulatory Dossier: Compliance Export Generation** covers `liability_compliance.py` — the EU AI Act, HIPAA, and SEC-oriented PDF generation flow, the `ExportScope` dataclass, jurisdiction-specific scope validation, and how the export combines evidence from all six layers.

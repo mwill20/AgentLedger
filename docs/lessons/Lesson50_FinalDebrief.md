@@ -1,5 +1,7 @@
 # Lesson 50: The Final Debrief — Full Layer 5 Flow & Interview Readiness
 
+> **Beginner frame:** Layer 5 answers "which workflow should an agent trust enough to run?" This debrief ties workflow specs, human validation, service ranking, context bundles, and execution feedback into one quality loop.
+
 **Layer:** 5 — Workflow Registry & Quality Signals
 **Source:** All Layer 5 files — `workflow_registry.py`, `workflow_validator.py`, `workflow_ranker.py`, `workflow_context.py`, `workflow_executor.py`, `spec/LAYER5_COMPLETION.md`
 **Prerequisites:** Lessons 41–49

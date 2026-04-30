@@ -1,4 +1,6 @@
-﻿# Lesson 49: The Four Threats â€” Anti-Gaming & Hardening
+# Lesson 49: The Four Threats — Anti-Gaming & Hardening
+
+> **Beginner frame:** Workflow hardening is anti-cheat for quality signals. It protects validation, ranking, caching, and feedback paths from manipulation.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_validator.py`, `api/services/workflow_ranker.py`, `api/services/workflow_context.py`, `api/services/workflow_registry.py`

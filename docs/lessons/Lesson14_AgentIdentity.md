@@ -1,5 +1,7 @@
 # Lesson 14 — The Enrollment Office: Agent Identity Registration & Revocation
 
+> **Beginner frame:** Agent identity is the enrollment record for an AI agent. Registration proves the agent controls a key; revocation makes sure an identity that should no longer act cannot keep using old trust.
+
 **Layer:** 2 — Identity & Credentials  
 **File:** `api/services/identity.py` (609 lines)  
 **Prerequisites:** Lesson 13 (Credential Issuance — the JWT issued here is the output of `issue_agent_credential`)  

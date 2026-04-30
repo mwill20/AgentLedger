@@ -1,5 +1,7 @@
 # Lesson 33: The Overstep Detector — Mismatch Detection & Sensitivity Tiers
 
+> **Beginner frame:** Mismatch detection is an overreach alarm. It flags cases where a service asks for more data than its manifest, trust level, or the agent's policy supports.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_mismatch.py`, `db/migrations/versions/005_layer4_context.py`  
 **Prerequisites:** Lesson 32  

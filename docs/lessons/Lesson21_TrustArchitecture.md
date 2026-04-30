@@ -1,5 +1,13 @@
 # 🎓 Lesson 21: The Notary's Seal — Layer 3 Overview & Why Blockchain
 
+> **Beginner frame:** Blockchain anchoring is a public notary log for selected trust events. AgentLedger uses it so attestations and audit anchors can be verified independently when Web3 mode is configured, while local mode keeps the rest of the stack testable without a live chain.
+
+## Verification Status Note
+
+Layer 3 includes Solidity contracts, ABI artifacts, Python chain integration, and recorded Amoy evidence in `spec/LAYER3_COMPLETION.md`. The current v0.1.0 quickstart is still a local proof of concept: live Amoy writes require RPC credentials, configured contract addresses, a signer key, and testnet funds. Keep local-mode behavior and configured Web3 behavior distinct when teaching, testing, or operating this layer.
+
+---
+
 ## 🛡️ Welcome Back, Agent Architect!
 
 You've built a world-class manifest registry. Services are registered, crawled, ranked, and served through a battle-hardened FastAPI stack. But here's the million-dollar question:
@@ -53,7 +61,7 @@ Layer 3 answers: **"Has this service actually earned trust — and can you prove
 
 A trust rating stored in PostgreSQL can be changed silently. If AgentLedger claims a service has attestation_score=1.0, you have no way to verify that claim without trusting AgentLedger's database. This is fine for a starting point but breaks down in adversarial or regulated environments.
 
-**The blockchain solution:** When an auditor attests a service, that event is written to a smart contract on Polygon Amoy. Anyone with a public RPC endpoint can independently query `eth_getLogs` to confirm the event exists — no AgentLedger involvement required. The database becomes a fast read cache; the chain is the ground truth.
+**The blockchain solution:** When an auditor attests a service, that event is written to a smart contract on Polygon Amoy. Anyone with a public RPC endpoint can independently query `eth_getLogs` to confirm the event exists — no AgentLedger involvement required. In Web3 mode, the database becomes a fast read cache; the chain is the ground truth. In local mode, AgentLedger simulates chain events so the rest of the stack can be tested without a live RPC endpoint.
 
 ---
 

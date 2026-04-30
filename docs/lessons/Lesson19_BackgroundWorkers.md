@@ -1,5 +1,7 @@
 # Lesson 19 — The Night Shift: Background Workers & Redis Patterns
 
+> **Beginner frame:** Background workers are the night shift that clears expired credentials and refreshes identity state. They keep the trust system from depending only on request-time cleanup.
+
 **Layer:** 2 — Identity & Credentials  
 **Files:** `crawler/tasks/expire_identity_records.py` (50 lines), `crawler/tasks/revalidate_service_identity.py` (85 lines), `crawler/worker.py` (85 lines)  
 **Prerequisites:** Lessons 14–16 — the workers maintain the state managed by those service functions  

@@ -1,5 +1,7 @@
 # Lesson 39: The Compliance Dossier — PDF Export & Regulatory Package
 
+> **Beginner frame:** A compliance export is a review package, not a certificate. AgentLedger gathers disclosure history into a PDF-style dossier so humans can inspect context decisions without querying raw tables.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_compliance.py`, `api/routers/context.py`  
 **Prerequisites:** Lesson 38  

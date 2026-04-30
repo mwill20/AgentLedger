@@ -1,5 +1,7 @@
 # Lesson 36: The Safe Deposit Box — HMAC Commitment Scheme
 
+> **Beginner frame:** An HMAC commitment proves a value was committed without revealing the value immediately. It is like sealing a note in an envelope and publishing the envelope's fingerprint.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_disclosure.py` (lines 34–134), `api/models/context.py`  
 **Prerequisites:** Lesson 34  

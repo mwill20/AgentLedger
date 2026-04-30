@@ -1,5 +1,7 @@
 # 🎓 Lesson 23: The Badge Office — Auditor Registration & Credentialing
 
+> **Beginner frame:** Auditor registration is how AgentLedger decides who may create trust evidence. Like issuing inspector badges with limited jurisdictions, it ties auditors to scopes before their attestations can matter.
+
 ## 🛡️ Welcome Back, Agent Architect!
 
 You know the switchboard. Now let's meet the people who use it: **auditors** — security firms, compliance bodies, and certification authorities who evaluate AI services and stamp their approval on-chain.

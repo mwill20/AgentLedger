@@ -6,7 +6,7 @@ AgentLedger v0.1.0 is a local proof of concept. It is not documented as producti
 
 ## Known Limitations
 
-- No root `LICENSE` file currently exists. Usage rights are unclear until the owner selects a license.
+- The repository is licensed under MIT; downstream users are responsible for their own legal, security, and compliance review.
 - Layer 3 testnet deployment is deferred; local and code-complete paths exist, but live chain writes are not part of the default POC quickstart.
 - Full Layer 2 credential issuance requires `ISSUER_PRIVATE_JWK`.
 - Redis failure behavior is fail open for the POC.
@@ -38,8 +38,7 @@ AgentLedger v0.1.0 is a local proof of concept. It is not documented as producti
 
 ## Future Work
 
-- TODO: Select and add a repository license.
-- TODO: Add a formal security contact.
+- Enable or confirm GitHub private vulnerability reporting for sensitive security reports.
 - TODO: Add production deployment architecture if production use becomes a goal.
 - TODO: Add measured resource usage and repeatable performance benchmarks.
 - TODO: Add model license/version details if `EMBEDDING_MODE=model` is used for publication.

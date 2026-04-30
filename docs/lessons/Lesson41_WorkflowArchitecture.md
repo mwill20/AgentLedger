@@ -1,4 +1,6 @@
-﻿# Lesson 41: The DNS Registry â€” Layer 5 Overview & Workflow Architecture
+# Lesson 41: The Registry That Does Not Execute — Layer 5 Overview & Workflow Architecture
+
+> **Beginner frame:** The workflow registry is a recipe book, not a kitchen. AgentLedger validates, ranks, and records workflow specifications, while agent platforms remain responsible for executing them.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `spec/LAYER5_SPEC.md`, `spec/LAYER5_COMPLETION.md`, `api/routers/workflows.py`, `db/migrations/versions/006_layer5_workflows.py`
@@ -177,7 +179,7 @@ Phase 4: Execute & Report
 |----------|--------|
 | Workflow execution runtime | Agent platforms execute; AgentLedger validates and serves specs â€” executing makes us a runtime, not infrastructure |
 | Payment processing | Layer 6 |
-| Insurance underwriting | Layer 6 |
+| Insurance evidence inputs | Layer 6; underwriting is out of scope |
 | Cross-registry federation | Future |
 | Workflow marketplace monetization | Layer 6 |
 | Full ZKP for context bundles | v0.2 (inherits Layer 4 deferral) |

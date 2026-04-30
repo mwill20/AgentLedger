@@ -1,5 +1,7 @@
 # Lesson 16 — The Business Card: Service Identity & did:web Activation
 
+> **Beginner frame:** Service identity checks whether a service's public face matches the key and DID it advertises. It is the difference between a storefront sign and a verified business card.
+
 **Layer:** 2 — Identity & Credentials  
 **File:** `api/services/service_identity.py` (451 lines)  
 **Prerequisites:** Lesson 12 (DID Methods — `did:web` resolution), Lesson 13 (Credential Issuance — signature verification pattern)  

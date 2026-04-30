@@ -1,5 +1,7 @@
 # 🎓 Lesson 02: The Vault — Database Schema and Ontology
 
+> **Beginner frame:** A database schema is the evidence room layout: every shelf, label, and relationship decides whether records stay useful later. AgentLedger uses this structure to keep service manifests, ontology tags, search vectors, trust fields, and operational history consistent enough to audit.
+
 ## 🛡️ Welcome Back, Data Architect!
 
 Where does AgentLedger actually keep all the services, manifests, trust scores, and embeddings? 🔍 Today we're exploring the **database schema** — the "vault" that holds every piece of data in the system.

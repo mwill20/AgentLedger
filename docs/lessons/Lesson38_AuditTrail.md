@@ -1,5 +1,7 @@
 # Lesson 38: The Paper Trail — Disclosure Audit History & GDPR Erasure
 
+> **Beginner frame:** The disclosure audit trail is the checkout log for sensitive context. It records what was shared, withheld, committed, or erased so later reviewers can reconstruct the decision.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_disclosure.py` (lines 592–704), `api/routers/context.py`  
 **Prerequisites:** Lesson 37  

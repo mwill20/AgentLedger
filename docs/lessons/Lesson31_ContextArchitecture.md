@@ -1,5 +1,7 @@
 # Lesson 31: The Bouncer's Rulebook — Layer 4 Overview & Architecture
 
+> **Beginner frame:** Context architecture is the privacy rulebook. It decides what an agent may share with a service, why that sharing is allowed, and what evidence remains afterward.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `spec/LAYER4_SPEC.md`, `api/routers/context.py`, `db/migrations/versions/005_layer4_context.py`  
 **Prerequisites:** Lessons 01–30 — this lesson opens the Layer 4 series  

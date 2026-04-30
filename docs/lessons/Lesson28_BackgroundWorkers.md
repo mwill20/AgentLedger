@@ -1,5 +1,7 @@
 # 🎓 Lesson 28: The Night Watchman — Celery Background Workers
 
+> **Beginner frame:** Layer 3 workers are the control-room staff. They index chain events, wait for confirmations, anchor audit batches, and push revocations while the API handles user requests.
+
 ## 🌙 Welcome Back, Agent Architect!
 
 The API handles requests. But who handles the world when no request is coming in? Who polls the chain for new events, confirms that enough blocks have passed, batches audit records into Merkle trees, and pushes revocations to subscribers?

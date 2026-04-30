@@ -1,5 +1,7 @@
 # Lesson 56: The Final Verdict — Claim Determination, Resolution & Appeals
 
+> **Beginner frame:** The claims lifecycle is a case docket. It moves a claim from filed to evidence gathered, review, determination, resolution, or appeal while preserving a traceable state history.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/services/liability_claims.py`, `api/services/liability_attribution.py`
 **Prerequisites:** Lessons 53–54

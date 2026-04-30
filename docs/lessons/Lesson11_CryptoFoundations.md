@@ -1,5 +1,7 @@
 # 🎓 Lesson 11: The Lock and Key — Cryptographic Foundations
 
+> **Beginner frame:** Cryptography is how AgentLedger turns "trust me" into "verify this." Signatures, hashes, and canonical JSON let other systems prove who signed a claim and whether the evidence changed.
+
 ## 🔐 Welcome Back, Agent Architect!
 
 AgentLedger Layer 2 is built on a single cryptographic primitive: **Ed25519 digital signatures**. Every piece of identity in the system — agent credentials, session tokens, manifest signatures, webhook authentication — traces back to this one mechanism.

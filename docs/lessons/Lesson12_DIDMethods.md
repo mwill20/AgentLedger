@@ -1,5 +1,7 @@
 # 🎓 Lesson 12: The Name Badge — DID Methods (did:key & did:web)
 
+> **Beginner frame:** A DID is a verifiable name badge for software. AgentLedger uses DIDs to connect agents and services to public keys, so identity can be checked without relying only on a username or database row.
+
 ## 🪪 Welcome Back, Agent Architect!
 
 In Lesson 11 you learned how to sign and verify. Now the question is: **how do you prove which public key belongs to whom?**

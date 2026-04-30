@@ -1,5 +1,7 @@
 # Lesson 13 — The Notary: Credential Issuance & Verification
 
+> **Beginner frame:** Credential issuance is a notary stamp for machine-readable claims. AgentLedger signs identity and session facts so another part of the system can verify them later without re-running the original enrollment flow.
+
 **Layer:** 2 — Identity & Credentials  
 **File:** `api/services/credentials.py` (177 lines)  
 **Prerequisites:** Lesson 12 (DID Methods — you need to understand `did:key` and JWK format before the claims make sense)  

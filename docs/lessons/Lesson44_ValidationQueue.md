@@ -1,4 +1,6 @@
-﻿# Lesson 44: The Inspection Panel â€” Human Validation Queue
+# Lesson 44: The Inspection Panel — Human Validation Queue
+
+> **Beginner frame:** The validation queue adds expert review before a workflow earns stronger quality signals. It is the human inspection step between self-submission and public trust.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_validator.py`, `api/models/workflow.py` (checklist validators)

@@ -1,5 +1,9 @@
 # Lesson 55: The Regulatory Dossier — Compliance Export Generation
 
+> **Beginner frame:** A compliance export is a dossier for review. It organizes evidence around regulatory themes, but it does not certify that an organization complies with any law.
+
+> **Legal scope:** EU AI Act, HIPAA, and SEC-oriented exports are evidence packages for qualified reviewers. They are not legal advice, regulatory approval, or compliance certification.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/services/liability_compliance.py`
 **Prerequisites:** Lesson 54
@@ -9,7 +13,7 @@
 
 ## Welcome Back, Agent Architect!
 
-A financial audit doesn't end with a spreadsheet. The auditor produces a formal report bound for regulators, with section headers, cross-references, and a cover page identifying the entity and the reporting period. Layer 6's compliance export generator does the same for agent transactions — it produces jurisdiction-specific PDF packages suitable for EU AI Act, HIPAA, or SEC submissions, assembled from evidence across all six layers.
+A financial audit doesn't end with a spreadsheet. The auditor produces a formal report bound for regulators, with section headers, cross-references, and a cover page identifying the entity and the reporting period. Layer 6's compliance export generator does the same for agent transactions — it produces jurisdiction-specific PDF packages organized around EU AI Act, HIPAA, or SEC review themes, assembled from evidence across all six layers.
 
 This lesson traces the `ExportScope` dataclass, the three export generators, and the scope validation that prevents a health regulator from receiving a finance-scoped export.
 
@@ -251,7 +255,7 @@ docker exec agentledger-db-1 psql -U agentledger -d agentledger \
 A: HIPAA applies specifically to protected health information. The `health.*` ontology tag prefix is the canonical marker for health-domain capabilities in AgentLedger. Sensitivity tier ≥ 3 covers multiple domains (health, finance, legal) — checking only tier would produce HIPAA exports for finance transactions, which is incorrect. The prefix check scopes the export to health-domain interactions specifically.
 
 **Q: Why is the compliance export a PDF rather than structured JSON?**
-A: Regulatory submissions often require human-readable documentation that can be printed, signed, and physically submitted. JSON is machine-readable but not regulator-ready. The PDF format, using the same ReportLab pattern as the Layer 4 GDPR export, produces a document suitable for direct submission without additional formatting. Structured JSON is available via the evidence API for programmatic consumers.
+A: Regulatory submissions often require human-readable documentation that can be printed, signed, and physically submitted. JSON is machine-readable but not regulatory-review. The PDF format, using the same ReportLab pattern as the Layer 4 GDPR export, produces a document suitable for professional review without manually assembling the report from database rows. Structured JSON is available via the evidence API for programmatic consumers.
 
 **Q: What is the `low_risk_eu_scope` flag and when does it matter?**
 A: When all ontology tags in scope have `sensitivity_tier < 3`, the export scope is classified as low-risk for EU AI Act purposes. The EU AI Act distinguishes between GPAI (general-purpose AI) systems and high-risk systems — Section 5 (Incident Records) requirements are relaxed for low-risk systems. The `low_risk_eu_scope` flag signals to the EU AI Act PDF generator that it can omit or simplify the incident records section.

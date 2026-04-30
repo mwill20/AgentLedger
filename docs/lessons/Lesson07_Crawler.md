@@ -1,5 +1,7 @@
 # Lesson 07: The Watchdog -- Crawler, DNS Verification, and Trust Tiers
 
+> **Beginner frame:** A crawler is a periodic inspector. It checks whether registered services are still reachable and whether the service controls the domain it claims, so stale or unverifiable records do not keep looking trustworthy forever.
+
 ## Welcome Back, Systems Engineer!
 
 Services register themselves via `POST /manifests`, but how does AgentLedger know they're still alive? How does it verify that `flightbooker.example.com` actually controls that domain? Today we dissect the **Celery background workers** that crawl manifests, verify DNS ownership, and manage the trust tier progression that underpins the entire trust model.
@@ -378,7 +380,7 @@ Tier 2: domain_verified
   The service operator controls the domain they claim.
   This is the highest tier achievable in Layer 1.
      |
-     | Capability probing confirms service actually works (v0.2)
+     | Capability probing would require a future opt-in protocol
      v
 Tier 3: probed
   The service's capabilities have been independently tested.
@@ -520,6 +522,6 @@ curl -X POST -H "X-API-Key: dev-local-only" `
 
 ## Ready for Lesson 08?
 
-Next up, we'll explore **The Bouncer** -- the rate limiting middleware that protects AgentLedger from abuse, the typosquat detector that catches impersonation attempts, and the hardening measures that got the system to production readiness.
+Next up, we'll explore **The Bouncer** -- the rate limiting middleware that protects AgentLedger from abuse, the typosquat detector that catches impersonation attempts, and the hardening measures that got the system to POC readiness.
 
 *Remember: The crawler is the immune system. Without it, the registry fills with dead links and unverified claims. Trust without verification is just hope!*

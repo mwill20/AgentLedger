@@ -1,4 +1,6 @@
-﻿# Lesson 42: The Blueprint Department â€” Workflow Spec Format & Validation Rules
+# Lesson 42: The Blueprint Department — Workflow Spec Format & Validation Rules
+
+> **Beginner frame:** A workflow spec is a blueprint reviewers can inspect before a workflow is trusted. It describes steps, ontology tags, trust needs, and context needs in a predictable shape.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/models/workflow.py`, `api/services/workflow_registry.py` (lines 200â€“422)

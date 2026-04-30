@@ -1,5 +1,7 @@
 # 🎓 Lesson 27: The Neighborhood Watch — Federation & Blocklist Distribution
 
+> **Beginner frame:** Federation is how one registry shares security warnings with another. In AgentLedger, revocations and blocklists can travel as signed alerts instead of staying trapped inside one database.
+
 ## 🏘️ Welcome Back, Agent Architect!
 
 You can stamp attestations and revoke services on-chain. But right now that revocation is a secret. Every other AgentLedger registry on the planet continues trusting a service that has just been globally revoked — until they independently discover the on-chain event themselves.

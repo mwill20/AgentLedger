@@ -1,5 +1,7 @@
 # Lesson 17 — The Approval Desk: Human-in-the-Loop Authorization
 
+> **Beginner frame:** Human-in-the-loop authorization is a deliberate pause before sensitive agent activity. AgentLedger uses it when a human decision is part of the trust record rather than something the agent should decide alone.
+
 **Layer:** 2 — Identity & Credentials  
 **File:** `api/services/authorization.py` (525 lines)  
 **Prerequisites:** Lesson 15 (Session Assertions — HITL requests are created in `request_session`; approval produces a session assertion)  

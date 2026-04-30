@@ -1,5 +1,7 @@
 # Lesson 34: The Gatekeeper — The Matching Engine
 
+> **Beginner frame:** The matching engine is a gatekeeper that compares service needs, agent policy, trust tier, and sensitivity. Its output decides which fields are required, optional, withheld, or committed.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_matcher.py`  
 **Prerequisites:** Lessons 32, 33  

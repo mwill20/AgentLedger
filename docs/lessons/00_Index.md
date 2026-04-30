@@ -6,6 +6,10 @@
 **Estimated Total Time:** 60–84 hours
 **Prerequisites:** Basic Python, basic SQL, basic understanding of REST APIs
 
+## Current Status Note
+
+These lessons describe the AgentLedger v0.1.0 local proof of concept. Layers 1-6 are implemented and tested locally. Layer 3 includes Solidity contracts, chain abstraction, and recorded Amoy artifacts in the specs, but the default quickstart is local; live testnet writes require RPC configuration, contract addresses, signer keys, and funded testnet credentials. Treat compliance and liability lessons as evidence infrastructure, not legal certification, insurance underwriting, payment settlement, escrow, or binding adjudication.
+
 ---
 
 ## Curriculum Map

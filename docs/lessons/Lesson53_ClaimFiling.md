@@ -1,5 +1,7 @@
 # Lesson 53: The Claim Window — Filing a Liability Claim & Evidence Gathering
 
+> **Beginner frame:** Claim filing opens a dispute tied to one execution. Like an incident report, it starts a traceable evidence-gathering process and blocks duplicate or abusive filings.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/services/liability_claims.py`
 **Prerequisites:** Lesson 52

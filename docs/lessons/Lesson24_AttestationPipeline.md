@@ -1,5 +1,7 @@
 # 🎓 Lesson 24: The Stamp of Approval — The Attestation Pipeline
 
+> **Beginner frame:** The attestation pipeline is a stamp-and-file process. An auditor claim becomes a database record, an optional chain event, and eventually a confirmed signal that can affect trust.
+
 ## 🛡️ Welcome Back, Agent Architect!
 
 The auditor is registered, the scope is validated, and the badge is issued. Now it's time to actually stamp a service.

@@ -1,5 +1,7 @@
 # Lesson 57: The Contract — Data Models & API Routes
 
+> **Beginner frame:** Liability models and routes are precise forms for sensitive evidence work. They define what callers may submit and what AgentLedger promises to return.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/models/liability.py`, `api/routers/liability.py`
 **Prerequisites:** Lessons 51–56

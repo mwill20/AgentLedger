@@ -1,5 +1,7 @@
 # Lesson 04: The Blueprints -- Pydantic Data Models and Input Sanitization
 
+> **Beginner frame:** Pydantic models are structured intake forms. They catch malformed manifests, unsafe strings, and inconsistent requests before bad data can reach the registry, which is the first line of defense for trustworthy records.
+
 ## Welcome Back, Systems Engineer!
 
 What happens when an AI agent sends a malformed manifest to AgentLedger? Does the database crash? Does a SQL injection slip through? Today we're exploring the **Pydantic data models** that form an impenetrable validation layer between the outside world and your business logic.

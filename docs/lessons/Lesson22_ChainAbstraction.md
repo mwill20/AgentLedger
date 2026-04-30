@@ -1,5 +1,7 @@
 # 🎓 Lesson 22: The Switchboard — Chain Abstraction Layer
 
+> **Beginner frame:** Chain abstraction is a universal adapter. AgentLedger service code calls one Python interface whether the backing implementation is local simulation or a configured Web3 provider.
+
 ## 🛡️ Welcome Back, Agent Architect!
 
 In Lesson 21 you met the two smart contracts. Now here's the challenge: how do you write Python code that calls them during production — but also runs clean unit tests in CI without any Polygon tokens or RPC endpoint?

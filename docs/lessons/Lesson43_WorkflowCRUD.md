@@ -1,4 +1,6 @@
-﻿# Lesson 43: The Submissions Window â€” Workflow CRUD: Create, List & Retrieve
+# Lesson 43: The Submissions Window — Workflow CRUD: Create, List & Retrieve
+
+> **Beginner frame:** Workflow CRUD is the filing desk for workflow records. It creates, lists, retrieves, updates, and publishes specs while keeping lifecycle state explicit.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_registry.py` (lines 537â€“948), `api/routers/workflows.py`

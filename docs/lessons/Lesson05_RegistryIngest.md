@@ -1,5 +1,7 @@
 # Lesson 05: The Filing Cabinet -- Manifest Registration (Ingest)
 
+> **Beginner frame:** Manifest ingestion turns a service's self-description into durable, searchable records. Think of it like filing a business license and indexing it so future agents can find, compare, and audit the service.
+
 ## Welcome Back, Systems Engineer!
 
 You have validated the blueprint (Lesson 04). Now what? The validated `ServiceManifest` needs to be written into **six database tables** in a single atomic transaction -- services, manifests, capabilities with vector embeddings, pricing, context requirements, and operations. Today we dissect that entire pipeline, from the 28-line router that receives the request to the 320-line `register_manifest()` function that does the heavy lifting.

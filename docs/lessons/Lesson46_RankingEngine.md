@@ -1,4 +1,6 @@
-﻿# Lesson 46: The Talent Agency â€” Per-Step Ranking Engine
+# Lesson 46: The Talent Agency — Per-Step Ranking Engine
+
+> **Beginner frame:** Per-step ranking casts the right service for each workflow step. AgentLedger compares capability fit, trust, context permission, and quality signals instead of picking by name alone.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_ranker.py` (lines 55â€“411), `api/routers/workflows.py`

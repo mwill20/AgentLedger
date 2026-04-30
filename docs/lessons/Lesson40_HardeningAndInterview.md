@@ -1,5 +1,7 @@
 # Lesson 40: The Stress Test — Hardening, Caching, Rate Limiting & Interview Readiness
 
+> **Beginner frame:** Layer 4 hardening stress-tests the privacy controls. The goal is to understand stale caches, rate limits, disclosure windows, and what can still go wrong.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_matcher.py`, `api/services/context_profiles.py`, `api/services/context_disclosure.py`, `spec/LAYER4_SPEC.md`  
 **Prerequisites:** Lessons 31–39  

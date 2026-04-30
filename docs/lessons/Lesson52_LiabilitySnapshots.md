@@ -1,5 +1,7 @@
 # Lesson 52: The Snapshot in Time — Liability Snapshot Creation & Read Path
 
+> **Beginner frame:** A liability snapshot is a photo of the evidence before the scene changes. AgentLedger captures trust, workflow, service, and context state at execution time so later claims have a stable foundation.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `api/services/liability_snapshot.py`
 **Prerequisites:** Lesson 51, Lesson 48 (execution reporting), Lesson 34 (Layer 4 matching)

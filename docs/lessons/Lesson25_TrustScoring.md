@@ -1,5 +1,7 @@
 # 🎓 Lesson 25: The Ledger of Trust — Trust Tier 4 & the Scoring Engine
 
+> **Beginner frame:** Trust scoring turns evidence into a signal agents can compare. It is not a magic truth number; it is a transparent calculation based on attestations, revocations, reliability, and policy gates.
+
 ## 🏦 Welcome Back, Agent Architect!
 
 You can register auditors and stamp attestations. But how does a service's *trust score* actually change when those attestations arrive? And why isn't "two confirmed attestations" good enough — why does the system demand they come from *different organizations*?

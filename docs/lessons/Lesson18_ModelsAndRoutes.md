@@ -1,5 +1,7 @@
 # Lesson 18 — The Forms: Data Models & API Routes
 
+> **Beginner frame:** Routes are the public counters; models are the forms people hand in. This lesson shows how AgentLedger keeps identity APIs thin at the edge and puts the important rules in service code.
+
 **Layer:** 2 — Identity & Credentials  
 **Files:** `api/models/identity.py` (303 lines), `api/routers/identity.py` (251 lines)  
 **Prerequisites:** Lessons 14–17 — the models and routes here are thin wrappers over the services you've already studied  

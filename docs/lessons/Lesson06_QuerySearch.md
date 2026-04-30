@@ -1,5 +1,7 @@
 # Lesson 06: The Search Engine -- Structured Queries and Semantic Search
 
+> **Beginner frame:** Search is where the registry becomes useful. Agents can ask for exact ontology tags or describe what they need in plain language; AgentLedger combines filters, semantic vectors, and ranking signals to return useful candidates.
+
 ## Welcome Back, Systems Engineer!
 
 Services are registered. The database is populated with manifests, capabilities, embeddings, pricing, and context requirements. Now comes the payoff: how does an AI agent **find** the right service? Today we dissect the two query paths -- structured queries (exact ontology tag match) and semantic search (natural language similarity via pgvector) -- plus the ranking metadata that scores results.

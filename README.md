@@ -304,10 +304,14 @@ TODO: Add or link a Layer 4 completion summary if one is intended to be part of 
 
 ## License
 
-TODO: Add a root `LICENSE` file. Until a license is added, usage rights are unclear.
+This project is licensed under the MIT License.
+
+AgentLedger is provided as proof-of-concept infrastructure for trustworthy agent activity records, provenance, auditability, and security-focused visibility into agent behavior. It is provided "as is", without warranty of any kind. It does not provide legal advice, insurance underwriting, payment settlement, escrow, or regulatory certification.
+
+See [LICENSE](LICENSE) for details.
 
 ## Support
 
 For questions, bugs, or feature requests, open a GitHub issue.
 
-Security issues should follow [SECURITY.md](SECURITY.md). TODO: add a private security contact.
+Security issues should follow [SECURITY.md](SECURITY.md). For sensitive vulnerabilities, use GitHub private vulnerability reporting for this repository if enabled; otherwise contact the maintainer out of band before sharing exploitable details.

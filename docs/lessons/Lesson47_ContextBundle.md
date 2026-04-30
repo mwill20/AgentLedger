@@ -1,4 +1,6 @@
-﻿# Lesson 47: The One-Stop Approval â€” Context Bundle Integration
+# Lesson 47: The One-Stop Approval — Context Bundle Integration
+
+> **Beginner frame:** A context bundle is one approval package for a workflow's context needs. It prevents every step from becoming a separate privacy negotiation.
 
 **Layer:** 5 â€” Workflow Registry & Quality Signals
 **Source:** `api/services/workflow_context.py`, `api/models/workflow.py`

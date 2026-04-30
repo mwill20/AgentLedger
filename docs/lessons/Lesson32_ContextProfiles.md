@@ -1,5 +1,7 @@
 # Lesson 32: The Permission Slip — Context Profiles & Rules
 
+> **Beginner frame:** A context profile is an agent's permission slip. It says which data fields can be shared, with whom, and under what trust conditions.
+
 **Layer:** 4 — Context Matching & Selective Disclosure  
 **Source:** `api/services/context_profiles.py`, `api/models/context.py`, `db/migrations/versions/005_layer4_context.py`  
 **Prerequisites:** Lesson 31  

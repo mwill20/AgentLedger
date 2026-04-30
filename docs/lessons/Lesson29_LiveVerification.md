@@ -1,10 +1,18 @@
 # 🎓 Lesson 29: The Inspector General — Live Amoy Acceptance Run
 
+> **Beginner frame:** Live verification is the optional fire drill for the Web3 path. It proves the system can leave local simulation and interact with Polygon Amoy when RPC access, contract addresses, signer keys, and testnet funds are available.
+
 ## 🕵️ Welcome Back, Agent Architect!
 
 You've studied every Layer 3 component in `CHAIN_MODE=local`. Now it's time to verify the real thing — an actual deployment to Polygon Amoy testnet, live transaction hashes, real block confirmations, and independent on-chain verification.
 
 Think of an **inspector general**: they don't just review internal reports. They show up unannounced, read the original records directly, and compare them to what the organization claims. This lesson is your independent verification run — you'll verify attestation events exist on Amoy without trusting AgentLedger's API at all.
+
+---
+
+## Verification Status Note
+
+This lesson is not required for the default local quickstart. The repository contains code and historical Amoy evidence, but a new live run depends on external testnet resources. If those resources are unavailable, record the run as TODO rather than implying fresh chain verification happened.
 
 ---
 

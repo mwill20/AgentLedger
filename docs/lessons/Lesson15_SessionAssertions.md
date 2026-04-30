@@ -1,5 +1,7 @@
 # Lesson 15 — The Day Pass: Session Assertions
 
+> **Beginner frame:** A session assertion is a short-lived pass that says an agent may act for a specific purpose right now. It limits trust by scope and time, which is safer than treating identity as unlimited permission.
+
 **Layer:** 2 — Identity & Credentials  
 **File:** `api/services/sessions.py` (619 lines)  
 **Prerequisites:** Lesson 14 (Agent Identity — the `AgentCredentialPrincipal` passed into every session function comes from `authenticate_agent_credential`)  

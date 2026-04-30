@@ -1,5 +1,9 @@
 # Lesson 51: The Accountability Engine — Layer 6 Architecture & Design Principles
 
+> **Beginner frame:** Liability architecture is the evidence layer for when something goes wrong. It captures what the system knew at execution time so later review is based on records, not memory.
+
+> **Legal scope:** AgentLedger records evidence and computes structured signals. It does not make binding legal rulings, provide insurance underwriting, settle payments, operate escrow, or certify regulatory compliance.
+
 **Layer:** 6 — Liability, Attribution & Regulatory Compliance
 **Source:** `spec/LAYER6_SPEC.md`, `api/services/liability_snapshot.py`, `api/services/liability_claims.py`, `api/services/liability_attribution.py`, `api/services/liability_compliance.py`, `db/migrations/versions/007_layer6_liability.py`
 **Prerequisites:** Lessons 41–50 (especially Lesson 48 — execution reporting, and Lesson 50 — Layer 5 integration points)
@@ -47,7 +51,7 @@ Every design decision in Layer 6 flows from this principle. The attribution engi
 | Liability Snapshots | Captures point-in-time trust state at execution time, before trust scores change | Does not compute attribution or determine responsibility |
 | Dispute Protocol | Structured claims lifecycle: file → gather evidence → determine → resolve/appeal | Does not adjudicate; does not involve payment settlement |
 | Attribution Engine | Computes responsibility weights across four actors from structured evidence | Does not issue binding rulings; does not process insurance claims |
-| Regulatory Compliance Export | Generates EU AI Act, HIPAA, and SEC-ready PDF evidence packages | Does not submit reports to regulators; does not guarantee compliance |
+| Regulatory Compliance Export | Generates EU AI Act, HIPAA, and SEC-oriented PDF evidence packages | Does not submit reports to regulators; does not guarantee compliance |
 
 ---
 
